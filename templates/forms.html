@@ -1,11 +1,15 @@
-<form>
+<form action="/reports" method="POST">
+
   <div class="form-group">
-    <label for="inputItem">Nama Item</label>
-    <input type="item" class="form-control" id="inputItem" aria-describedby="itemHelp" placeholder="Masukan Nama Item">
+    <input type="text" class="form-control" id="inputItem"
+    name="item" placeholder="Enter Item Name">
   </div>
+
   <div class="form-group">
-    <label for="inputHarga">Harga (dalam Rupiah)</label>
-    <input type="password" class="form-control" id="inputHarga" placeholder="Harga Item">
-  </div>
+    <input type="text" class="form-control" id="inputHarga"
+    name="harga" placeholder="Enter Item Price">
+
+  <br/>
   <button type="submit" class="btn btn-primary">Input Data Pengeluaran</button>
+
 </form>
