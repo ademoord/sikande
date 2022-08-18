@@ -15,23 +15,56 @@
           </thead>
         <tbody>
           {% for i in item %}
-            {% if i.itemTimestamp.day == curDay and i.itemTimestamp.month == curMon %}
+            {% if i.itemTimestamp.day != curDay %}
               <tr>
                 <td>{{ i.itemID }}</td>
                 <td>{{ i.itemName }}</td>
                 <td>{{ i.itemPrice }}</td>
-                <td>{{ i.itemTimestamp.ctime()[0:11] }}</td>
+                <td>{{ i.itemTimestamp.ctime()[:11] }}</td>
               </tr>
             {% endif %}
-            <tr>
-            <td>{{ i.itemID }}</td>
-            <td>{{ i.itemName }}</td>
-            <td>{{ i.itemPrice }}</td>
-            <td>{{ i.itemTimestamp.ctime()[0:11] }} (TIDAK SAMA)</td>
-            </tr>
           {% endfor %}
         </tbody>
       </table>
+      <div class="border">
+      </div>
+      <div class="container">
+        <p>Total Outcome for <b>{{ item[0].itemTimestamp.ctime()[:11] }}</b> is:
+        <b>{{ "Rp{:,.2f}".format(totalout) }}</b></p>
+      </div>
+
+<!----------------------------------------------------TABLE SEPARATION------------------------------------------------------------------------>
+
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Price</th>
+            <th scope="col">Timestamp</th>
+          </tr>
+          </thead>
+        <tbody>
+          {% for i in item %}
+            {% if i.itemTimestamp.day == curDay %}
+              <tr>
+                <td>{{ i.itemID }}</td>
+                <td>{{ i.itemName }}</td>
+                <td>{{ i.itemPrice }}</td>
+                <td>{{ i.itemTimestamp.ctime()[:11] }}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="border">
+      </div>
+      <div class="container">
+        <p>Total Outcome for <b>{{ dt.ctime()[:11] }}</b> is:
+        <b>{{ "Rp{:,.2f}".format(totalout) }}</b></p>
+      </div>
+
+
     </div>
   </div>
 

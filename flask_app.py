@@ -4,9 +4,11 @@
 #     desc: the main app
 #
 import datetime, pytz
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from functools import reduce
+from operator import add
 
 
 # START OF INIT AND CONFIG SECTION
@@ -25,12 +27,22 @@ migrate = Migrate(app, db)
 
 
 # START OF CUSTOM METHODS
-# the timeConverter method
+# the time converter method
 def gmt7now(dt_utc):
-    dt_utc = datetime.datetime.utcnow()                                # utcnow class method
-    dt_rep = dt_utc.replace(tzinfo=pytz.UTC)                           # replace method
-    dt_gmt7 = dt_rep.astimezone(pytz.timezone("Asia/Jakarta"))         # astimezone method
+    dt_utc = datetime.datetime.utcnow()                                 # utcnow class method
+    dt_rep = dt_utc.replace(tzinfo=pytz.UTC)                            # replace method
+    dt_gmt7 = dt_rep.astimezone(pytz.timezone("Asia/Jakarta"))          # astimezone method
     return dt_gmt7
+
+# the db integer sum method
+def dbsumint(qr_int):
+    db.session.rollback()                                               # rollback the object first
+    total = db.session.query(qr_int)                                    # assign the integer column object by querying them
+    sums = total.all()                                                  # joins them as a tuple
+    joined = reduce(add, sums)                                          # joins them as a list
+    result = sum(joined)                                                # sum that list and assign to a var
+    return result
+
 
 # END OF CUSTOM METHODS
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -52,10 +64,11 @@ class Debt(db.Model):
     debtName = db.Column(db.String(64), index=True, unique=False)
     debtTotal = db.Column(db.Integer, index=True)
     debtCreditor = db.Column(db.String(64), index=True, unique=False)
-    debtTimestamp = db.Column(db.DateTime, index=True)
+    debtReceived = db.Column(db.DateTime, index=True)
+    debtDeadline = db.Column(db.DateTime, index=True)
 
     def __repr__(self):
-        return '<Debt {}>'.format(self.itemName)
+        return '<Debt {}>'.format(self.debtName)
 
 
 # END OF MODELS CREATION
@@ -64,6 +77,14 @@ class Debt(db.Model):
 
 
 # START OF VIEW AND CONTROLLER SECTION
+
+
+# Create a global var for the needs of time adjusting
+dtCurrent = gmt7now(datetime.datetime.utcnow)
+dtDay = dtCurrent.day
+dtMon = dtCurrent.month
+
+
 # Input view
 @app.route('/')
 def home():
@@ -76,10 +97,7 @@ def home():
 # Reports view
 @app.route('/reports', methods=['GET', 'POST'])
 def reports():
-    title = "Finance Report"
-    dtCurrent = gmt7now(datetime.datetime.utcnow)
-    dtDay = dtCurrent.day
-    dtMon = dtCurrent.month
+    title = "Reports"
     if request.method == 'POST':
         qs = Item(itemName=request.form["item"],                       #
                 itemPrice=request.form["harga"],                       # insert the data to db
@@ -88,31 +106,64 @@ def reports():
         db.session.rollback()
         db.session.add(qs)
         db.session.commit()
+        flash('Item was successfully added')
         items = Item.query.all()
+        totalout = dbsumint(Item.itemPrice)
 
         return render_template('reports.html',
                                 title=title,
                                 item=items,
+                                dt=dtCurrent,
                                 curDay=dtDay,
-                                curMon=dtMon
+                                curMon=dtMon,
+                                totalout=totalout
         )
     else:
         db.session.rollback()
         items = Item.query.all()
+        totalout = dbsumint(Item.itemPrice)
 
         return render_template('reports.html',
                                 title=title,
                                 item=items,
+                                dt=dtCurrent,
                                 curDay=dtDay,
-                                curMon=dtMon
+                                curMon=dtMon,
+                                totalout=totalout
         )
 
 
 # Debts view
-@app.route('/debts')
+@app.route('/debts', methods=['GET', 'POST'])
 def debts():
     title = "Debts"
+    if request.method == 'POST':
+        qs = Debt(debtName=request.form["debtname"],                       #
+                debtTotal=request.form["debttotal"],                       #
+                debtCreditor=request.form["debtcredit"],                   # insert the data to db
+                debtReceived=gmt7now(datetime.datetime.utcnow),            #
+                debtDeadline=request.form["debtdeadline"]                  #
+                )
+        db.session.rollback()
+        db.session.add(qs)
+        db.session.commit()
+        flash('Debt was successfully added')
+
+    debtList = Debt.query.all()
+    totaldebt = dbsumint(Debt.debtTotal)
     return render_template('debts.html',
+                            title=title,
+                            debt=debtList,
+                            dt=dtCurrent,
+                            totaldebt=totaldebt
+    )
+
+
+# Plans view
+@app.route('/plans', methods=['GET', 'POST'])
+def plans():
+    title = "Plans"
+    return render_template('plans.html',
                             title=title
     )
 

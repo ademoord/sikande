@@ -2,6 +2,9 @@
 
 {% block content %}
   <br/><br/>
+  {% include 'debtforms.html' %}
+  <border/>
+  <br/><br/>
   <div class="container">
     <div class="col">
       <table class="table table-sm">
@@ -11,16 +14,27 @@
             <th scope="col">Name</th>
             <th scope="col">Total Debt</th>
             <th scope="col">Creditor</th>
-            <th scope="col">Timestamp</th>
+            <th scope="col">Received</th>
+            <th scope="col">Deadline</th>
           </tr>
           </thead>
         <tbody>
-            <tr>
-              <td>{{ i.itemID }}</td>
-              <td>{{ i.itemName }}</td>
-              <td>{{ i.itemPrice }}</td>
-              <td>{{ i.itemTimestamp.ctime()[0:11] }} (TIDAK SAMA)</td>
-              </tr>
+          {% for d in debt %}
+          <tr>
+            <td>{{ d.debtID }}</td>
+            <td>{{ d.debtName }}</td>
+            <td>{{ "Rp{:,.2f}".format(d.debtTotal) }}</td>
+            <td>{{ d.debtCreditor }}</td>
+            <td>{{ d.debtReceived.ctime()[0:11] }}</td>
+            <td>{{ d.debtDeadline.ctime()[0:11] }}</td>
+          </tr>
+          {% endfor %}
         </tbody>
       </table>
+      <div class="border">
+      </div>
+      <div class="container">
+        <p>Total Debt for <b>{{ dt.ctime()[4:7] }}</b> is:
+        <b>{{ "Rp{:,.2f}".format(totaldebt) }}</b></p>
+      </div>
 {% endblock %}
