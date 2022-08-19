@@ -1,0 +1,22 @@
+<table class="table table-sm">
+<thead>
+  <tr>
+    <th scope="col">Name</th>
+    <th scope="col">Price</th>
+    <th scope="col">Timestamp</th>
+  </tr>
+  </thead>
+<tbody>
+  {% for i in item %}
+    {% if i.itemTimestamp.day != curDay %}
+      <tr>
+        <td>{{ i.itemName }}</td>
+        <td>{{ "Rp{:,.2f}".format(i.itemPrice) }}</td>
+        <td>{{ i.itemTimestamp.ctime()[:11] }}</td>
+      </tr>
+    {% endif %}
+  {% endfor %}
+</tbody>
+</table>
+<div class="border">
+</div>
