@@ -2,19 +2,18 @@
 <thead>
   <tr>
     <th scope="col">Name</th>
-    <th scope="col">Price</th>
-    <th scope="col">Timestamp</th>
+    <th scope="col" style="text-align:right">Price (Rp)</th>
+    <th scope="col" style="text-align:right">Timestamp</th>
   </tr>
   </thead>
 <tbody>
   {% for i in item %}
-    {% if i.itemTimestamp.day != curDay %}
+    {% set comma = ", " %}
       <tr>
         <td>{{ i.itemName }}</td>
-        <td>{{ "Rp{:,.2f}".format(i.itemPrice) }}</td>
-        <td>{{ i.itemTimestamp.ctime()[:11] }}</td>
+        <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>                                                         <!-- formatting the price to use the Rp and comma separator based on IDR currency -->
+        <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>                  <!-- formatting the timestamp to use the comma separator in the ctime iso formatting -->
       </tr>
-    {% endif %}
   {% endfor %}
 </tbody>
 </table>

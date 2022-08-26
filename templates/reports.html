@@ -4,16 +4,11 @@
   <br/><br/>
   <div class="container">
     <div class="col">
-      {% for n in range(31) %}
-        {% if dt.day >= n and n != 0 %}
-          Outcome Table for {{ n }} {{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}
-          {% include 'table.html' %}
-          <div class="container">
-            <p>Total Outcome for <b>{{ n }} {{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b> is:
-            <b>{{ "Rp{:,.2f}".format(totalout) }}</b></p>
-          </div>
-        {% endif %}
-      {% endfor %}
+      {% include 'table.html' %}
+      <div class="container">
+        <p>Total Outcome for <b>{{ n }} {{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b> is:
+        <b>{{ "Rp{:,.2f}".format(totalout) }}</b></p>
+      </div>
     </div>
   </div>
 
