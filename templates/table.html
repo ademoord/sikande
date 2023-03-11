@@ -9,11 +9,13 @@
 <tbody>
   {% for i in item %}
     {% set comma = ", " %}
+    {% if dt.day == curDay %}
       <tr>
         <td>{{ i.itemName }}</td>
         <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>                                                         <!-- formatting the price to use the Rp and comma separator based on IDR currency -->
         <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>                  <!-- formatting the timestamp to use the comma separator in the ctime iso formatting -->
       </tr>
+    {% endif %}
   {% endfor %}
 </tbody>
 </table>

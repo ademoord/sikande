@@ -25,8 +25,8 @@
             <td>{{ d.debtName }}</td>
             <td>{{ "Rp{:,.2f}".format(d.debtTotal) }}</td>
             <td>{{ d.debtCreditor }}</td>
-            <td>{{ d.debtReceived.ctime()[0:11] }}</td>
-            <td>{{ d.debtDeadline.ctime()[0:11] }}</td>
+            <td>{{ d.debtReceived }}</td>
+            <td>{{ d.debtDeadline }}</td>
           </tr>
           {% endfor %}
         </tbody>
