@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/andromedasupendi/sikande.git'
+                git branch: 'dev2', url: 'https://github.com/andromedasupendi/sikande.git'
             }
         }
         stage('Install Dependencies') {
