@@ -8,16 +8,19 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
+                sh 'git checkout dev2'
                 sh 'pip install -r requirements.txt'
             }
         }
         stage('Test') {
             steps {
+                sh 'git checkout dev2'
                 sh 'python -m pytest tests'
             }
         }
         stage('Lint') {
             steps {
+                sh 'git checkout dev2'
                 sh 'flake8'
             }
         }
@@ -27,10 +30,10 @@ pipeline {
                 FLASK_ENV = 'production'
             }
             steps {
+                sh 'git checkout dev2'
                 sh 'flask db upgrade'
                 sh 'flask run'
             }
         }
     }
 }
-
