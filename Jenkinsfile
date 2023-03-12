@@ -15,7 +15,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh 'git checkout dev2'
-                sh 'python -m pytest tests'
+                sh 'python3 -m pytest tests'
             }
         }
         stage('Lint') {
