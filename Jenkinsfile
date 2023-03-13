@@ -3,24 +3,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'dev2', url: 'https://github.com/andromedasupendi/sikande.git'
+                git branch: 'dev3', url: 'https://github.com/andromedasupendi/sikande.git'
             }
         }
-        stage('Install Dependencies') {
+        stage('SonarQube analysis') {
             steps {
-                sh 'git checkout dev2'
-                sh 'pip install -r requirements.txt'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh 'git checkout dev2'
-                sh 'python3 -m pytest tests'
+                withSonarQubeEnv('sonarqube') {
+                    sh 'mvn sonar:sonar'
+                }
             }
         }
         stage('Lint') {
             steps {
-                sh 'git checkout dev2'
+                sh 'git checkout dev3'
                 sh 'flake8'
             }
         }
@@ -30,10 +25,11 @@ pipeline {
                 FLASK_ENV = 'production'
             }
             steps {
-                sh 'git checkout dev2'
+                sh 'git checkout dev3'
                 sh 'flask db upgrade'
                 sh 'flask run'
             }
         }
     }
 }
+
