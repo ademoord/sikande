@@ -9,7 +9,7 @@ pipeline {
         stage('SonarQube analysis') {
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh '/home/sanbersydevelopment/Programs/Sonar/Scanner/bin/sonar-scanner'
+                    sh 'sudo /home/sanbersydevelopment/Programs/Sonar/Scanner/bin/sonar-scanner'
                 }
             }
         }
