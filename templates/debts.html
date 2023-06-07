@@ -12,7 +12,7 @@
           <tr>
             <th scope="col">ID</th>
             <th scope="col">Name</th>
-            <th scope="col">Total Debt</th>
+            <th scope="col">Total Debt/Debt Value</th>
             <th scope="col">Creditor</th>
             <th scope="col">Received</th>
             <th scope="col">Deadline</th>
@@ -34,7 +34,7 @@
       <div class="border">
       </div>
       <div class="container">
-        <p>Total Debt for <b>{{ dt.ctime()[4:7] }}</b> is:
+        <p>Total Debt for <b>{{ dt.ctime()[20:24] }}</b> is:
         <b>{{ "Rp{:,.2f}".format(totaldebt) }}</b></p>
       </div>
 {% endblock %}
