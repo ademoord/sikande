@@ -15,6 +15,9 @@ from operator import add
 # application init
 app = Flask(__name__)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'xxx-xxx-xxx'
+app.config['SECRET_KEY'] = 'xxx-xxx-xxx'
+
 # assign the db object init
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
