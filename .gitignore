@@ -1,0 +1,29 @@
+# Byte-compiled / optimized Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Local development configuration
+instance/
+
+# Database files
+db.sqlite3
+
+# Static files
+/static/uploads/
+
+# Virtual environment
+venv/
+
+# IDE specific files
+.vscode/
+
+# System or editor temporary files
+*~
+.DS_Store

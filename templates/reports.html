@@ -3,7 +3,7 @@
 {% block content %}
   <br/><br/>
   <div class="container">
-    <div class="col">
+    <div class="col" style="padding-left: 3px;">
       {% include 'table.html' %}
       <div class="container">
         <p>Total Outcome for <b>{{ n }} {{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b> is:
@@ -11,5 +11,13 @@
       </div>
     </div>
   </div>
+
+  <button class="scroll-to-top-button" onclick="scrollToTop()">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!--<button class="scroll-to-top-button" onclick="scrollToTop()">-->
+  <!--  SCROLL TO<br>TOP OF PAGE-->
+  <!--</button>-->
 
 {% endblock %}

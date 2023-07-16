@@ -4,7 +4,7 @@
 #     desc: the main app
 #
 import datetime, pytz
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from functools import reduce
@@ -14,9 +14,6 @@ from operator import add
 # START OF INIT AND CONFIG SECTION
 # application init
 app = Flask(__name__)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://sikande:financial2022@sikande.mysql.pythonanywhere-services.com/sikande$default'
-app.config['SECRET_KEY'] = 'you-will-never-guess'
 
 # assign the db object init
 db = SQLAlchemy(app)
@@ -95,42 +92,98 @@ def home():
 
 
 # Reports view
+# @app.route('/reports', methods=['GET', 'POST'])
+# def reports():
+#     title = "Reports"
+#     if request.method == 'POST':
+#         qs = Item(itemName=request.form["item"],                       #
+#                 itemPrice=request.form["harga"],                       # insert the data to db
+#                 itemTimestamp=gmt7now(datetime.datetime.utcnow)        #
+#                 )
+#         db.session.rollback()
+#         db.session.add(qs)
+#         db.session.commit()
+#         flash('Item was successfully added')
+#         items = Item.query.all()
+#         totalout = dbsumint(Item.itemPrice)
+
+#         return render_template('reports.html',
+#                                 title=title,
+#                                 item=items,
+#                                 dt=dtCurrent,
+#                                 curDay=dtDay,
+#                                 curMon=dtMon,
+#                                 totalout=totalout
+#         )
+#     else:
+#         db.session.rollback()
+#         items = Item.query.all()
+#         totalout = dbsumint(Item.itemPrice)
+
+#         return render_template('reports.html',
+#                                 title=title,
+#                                 item=items,
+#                                 dt=dtCurrent,
+#                                 curDay=dtDay,
+#                                 curMon=dtMon,
+#                                 totalout=totalout
+#         )
+
+
 @app.route('/reports', methods=['GET', 'POST'])
 def reports():
     title = "Reports"
     if request.method == 'POST':
-        qs = Item(itemName=request.form["item"],                       #
-                itemPrice=request.form["harga"],                       # insert the data to db
-                itemTimestamp=gmt7now(datetime.datetime.utcnow)        #
-                )
-        db.session.rollback()
-        db.session.add(qs)
-        db.session.commit()
-        flash('Item was successfully added')
+        # Process the POST request and save the data
+        try:
+            qs = Item(
+                itemName=request.form["item"],
+                itemPrice=request.form["harga"],
+                itemTimestamp=gmt7now(datetime.datetime.utcnow)
+            )
+            db.session.rollback()
+            db.session.add(qs)
+            db.session.commit()
+            flash('Item was successfully added')
+        except Exception as e:
+            return redirect(url_for('home'))  # Redirect to the "home" route if 500 Internal Server Error
+
+        # Retrieve data and render the template
         items = Item.query.all()
         totalout = dbsumint(Item.itemPrice)
-
         return render_template('reports.html',
-                                title=title,
-                                item=items,
-                                dt=dtCurrent,
-                                curDay=dtDay,
-                                curMon=dtMon,
-                                totalout=totalout
-        )
+                               title=title,
+                               item=items,
+                               dt=dtCurrent,
+                               curDay=dtDay,
+                               curMon=dtMon,
+                               totalout=totalout
+                               )
     else:
-        db.session.rollback()
-        items = Item.query.all()
-        totalout = dbsumint(Item.itemPrice)
+        # Retrieve data and render the template
+        try:
+            items = Item.query.all()
+            totalout = dbsumint(Item.itemPrice)
+        except Exception as e:
+            return redirect(url_for('home'))  # Redirect to the "home" route if 500 Internal Server Error
 
         return render_template('reports.html',
-                                title=title,
-                                item=items,
-                                dt=dtCurrent,
-                                curDay=dtDay,
-                                curMon=dtMon,
-                                totalout=totalout
-        )
+                               title=title,
+                               item=items,
+                               dt=dtCurrent,
+                               curDay=dtDay,
+                               curMon=dtMon,
+                               totalout=totalout
+                               )
+
+
+@app.route('/item/del/<int:itemID>', methods=['GET', 'POST'])
+def delete_item(itemID):
+    item = Item.query.get(itemID)
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+    return redirect(url_for('home'))  # Redirect to the desired page after deletion
 
 
 # Debts view

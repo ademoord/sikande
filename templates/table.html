@@ -1,23 +1,31 @@
-<table class="table table-sm">
-<thead>
-  <tr>
-    <th scope="col">Name</th>
-    <th scope="col" style="text-align:right">Price (Rp)</th>
-    <th scope="col" style="text-align:right">Timestamp</th>
-  </tr>
+<!--<table class="table table-sm">-->
+<table class="custom-table">
+  <thead>
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col" style="text-align:right">Price (Rp)</th>
+      <th scope="col" style="text-align:right">Timestamp</th>
+      <th scope="col" style="text-align:right">Action</th>
+    </tr>
   </thead>
-<tbody>
-  {% for i in item %}
+  <tbody>
+    {% for i in item %}
     {% set comma = ", " %}
     {% if dt.day == curDay %}
-      <tr>
-        <td>{{ i.itemName }}</td>
-        <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>                                                         <!-- formatting the price to use the Rp and comma separator based on IDR currency -->
-        <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>                  <!-- formatting the timestamp to use the comma separator in the ctime iso formatting -->
-      </tr>
+    <tr>
+      <td>{{ i.itemName }}</td>
+      <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>
+      <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>
+      <td style="text-align:right">
+        <button class="action-button edit-button"><i class="fas fa-pencil-alt"></i></button>
+        <!--<button href="/item/del/{{ i.itemID }}" class="action-button delete-button"><i class="fas fa-trash-alt"></i></button>-->
+        <button class="action-button delete-button" onclick="confirmDelete('{{ i.itemID }}')">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </td>
+    </tr>
     {% endif %}
-  {% endfor %}
-</tbody>
+    {% endfor %}
+  </tbody>
 </table>
-<div class="border">
-</div>
+<div class="border"></div>
