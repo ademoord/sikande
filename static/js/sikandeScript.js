@@ -50,3 +50,19 @@ function scrollToTop() {
       behavior: 'smooth'
     });
 }
+
+// Get all the navigation links
+const navLinks = document.querySelectorAll('.nav-link');
+
+// Add a click event listener to each link
+navLinks.forEach((link) => {
+  link.addEventListener('click', (e) => {
+    // Remove the "active" class from all links
+    navLinks.forEach((navLink) => {
+      navLink.classList.remove('active');
+    });
+
+    // Add the "active" class to the clicked link
+    e.target.classList.add('active');
+  });
+});

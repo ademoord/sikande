@@ -400,3 +400,8 @@ text-align: center;
 .scroll-to-top-button:hover {
 opacity: 0.8;
 }
+
+.nav-link.active {
+  font-weight: bold;
+  color: blue;
+}
