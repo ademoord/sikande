@@ -1,3 +1,4 @@
+from sqlalchemy import CheckConstraint
 from flask_login import UserMixin
 from config import db
 
@@ -8,6 +9,12 @@ class Item(db.Model):
     itemName = db.Column(db.String(64), index=True, unique=False)
     itemPrice = db.Column(db.Integer, index=True)
     itemTimestamp = db.Column(db.DateTime, index=True)
+    category = db.Column(db.String(20), index=True)
+
+    # Add a check constraint to enforce allowed values
+    __table_args__ = (
+        CheckConstraint(category.in_(['needs', 'liabilities', 'saving', 'charity', 'fun', 'urgent'])),
+    )
 
     def __repr__(self):
         return '<Item {}>'.format(self.itemName)

@@ -77,24 +77,46 @@ def logout():
 @app.route('/reports', methods=['GET', 'POST'])
 @login_required
 def reports():
+
+    # Create a mapping of category values to their corresponding names
+    category_mapping = {
+        'needs': 'Kebutuhan Sehari-hari',
+        'liabilities': 'Hutang',
+        'saving': 'Tabungan',
+        'charity': 'Kebaikan',
+        'fun': 'Jajan & Hiburan',
+        'urgent': 'Keperluan Darurat'
+    }
+
     title = "Reports"
     try:
         if request.method == 'POST':
             # Process the POST request and save the data
+            category = request.form["category"]
+            item = request.form["item"]
+            harga = request.form["harga"]
+
+            print("CATEG",category)
+            print("ITEM",item)
+            print("HARG",harga)
+
             qs = Item(
-                itemName=request.form["item"],
-                itemPrice=request.form["harga"],
-                itemTimestamp=helpers.gmt7now(datetime.datetime.utcnow)
+                itemName=item,
+                itemPrice=harga,
+                itemTimestamp=helpers.gmt7now(datetime.datetime.utcnow()),
+                category=category  # Add the selected category
             )
+
             db.session.rollback()
             db.session.add(qs)
             db.session.commit()
             flash('Item was successfully added')
+
         # Retrieve data and render the template
         items = Item.query.all()
         totalout = helpers.dbsumint(Item.itemPrice)
         return render_template('reports.html', title=title, item=items, dt=dtCurrent, curDay=dtDay, curMon=dtMon,
-                               totalout=totalout)
+                               totalout=totalout, category_mapping=category_mapping)
     except Exception as e:
         return redirect(url_for('input'))  # Redirect to the "input" route if 500 Internal Server Error
 
