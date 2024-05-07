@@ -1,13 +1,26 @@
 <form action="/reports" method="POST">
 
+
   <div class="form-group">
-    <input type="text" class="form-control" id="inputItem"
-    name="item" placeholder="Enter Item Name">
+    <label for="inputItem">Item:</label>
+    <input type="text" class="form-control" id="inputItem" name="item" placeholder="Enter Item Name">
   </div>
 
   <div class="form-group">
-    <input type="number" class="form-control" id="inputHarga"
-    name="harga" placeholder="Enter Item Price">
+    <label for="inputHarga">Price:</label>
+    <input type="number" class="form-control" id="inputHarga" name="harga" placeholder="Enter Item Price">
+  </div>
+
+  <div class="form-group">
+    <label for="inputCategory">Category:</label>
+    <select class="form-control" id="inputCategory" name="category">
+      <option value="needs">Kebutuhan Sehari-hari</option>
+      <option value="liabilities">Hutang</option>
+      <option value="saving">Tabungan</option>
+      <option value="charity">Kebaikan</option>
+      <option value="fun">Jajan &amp; Hiburan</option>
+      <option value="urgent">Keperluan Darurat</option>
+    </select>
   </div>
 
   <br/>

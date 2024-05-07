@@ -4,6 +4,7 @@
     <tr>
       <th scope="col">Name</th>
       <th scope="col" style="text-align:right">Price (Rp)</th>
+      <th scope="col">Category</th>
       <th scope="col" style="text-align:right">Timestamp</th>
       <th scope="col" style="text-align:right">Action</th>
     </tr>
@@ -15,6 +16,7 @@
     <tr>
       <td>{{ i.itemName }}</td>
       <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>
+      <td>{{ category_mapping[i.category] }}</td>
       <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>
       <td style="text-align:right">
         <button class="action-button edit-button"><i class="fas fa-pencil-alt"></i></button>

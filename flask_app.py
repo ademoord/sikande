@@ -6,45 +6,10 @@
 import datetime
 import helpers
 from flask import render_template, request, redirect, url_for, flash
-from flask_login import UserMixin, login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
+from models import Item, Debt, User
 
-# START OF MODELS CREATION
-# Item model
-class Item(db.Model):
-    itemID = db.Column(db.Integer, primary_key=True)
-    itemName = db.Column(db.String(64), index=True, unique=False)
-    itemPrice = db.Column(db.Integer, index=True)
-    itemTimestamp = db.Column(db.DateTime, index=True)
-
-    def __repr__(self):
-        return '<Item {}>'.format(self.itemName)
-
-# Debt model
-class Debt(db.Model):
-    debtID = db.Column(db.Integer, primary_key=True)
-    debtName = db.Column(db.String(64), index=True, unique=False)
-    debtTotal = db.Column(db.Integer, index=True)
-    debtCreditor = db.Column(db.String(64), index=True, unique=False)
-    debtReceived = db.Column(db.DateTime, index=True)
-    debtDeadline = db.Column(db.DateTime, index=True)
-
-    def __repr__(self):
-        return '<Debt {}>'.format(self.debtName)
-
-# User model
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    password = db.Column(db.String(60), nullable=False)
-
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-
-
-# END OF MODELS CREATION
-# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # START OF VIEW AND CONTROLLER SECTION
 
 # Create a global var for the needs of time adjustment
@@ -112,24 +77,46 @@ def logout():
 @app.route('/reports', methods=['GET', 'POST'])
 @login_required
 def reports():
+
+    # Create a mapping of category values to their corresponding names
+    category_mapping = {
+        'needs': 'Kebutuhan Sehari-hari',
+        'liabilities': 'Hutang',
+        'saving': 'Tabungan',
+        'charity': 'Kebaikan',
+        'fun': 'Jajan & Hiburan',
+        'urgent': 'Keperluan Darurat'
+    }
+
     title = "Reports"
     try:
         if request.method == 'POST':
             # Process the POST request and save the data
+            category = request.form["category"]
+            item = request.form["item"]
+            harga = request.form["harga"]
+
+            print("CATEG",category)
+            print("ITEM",item)
+            print("HARG",harga)
+
             qs = Item(
-                itemName=request.form["item"],
-                itemPrice=request.form["harga"],
-                itemTimestamp=helpers.gmt7now(datetime.datetime.utcnow)
+                itemName=item,
+                itemPrice=harga,
+                itemTimestamp=helpers.gmt7now(datetime.datetime.utcnow()),
+                category=category  # Add the selected category
             )
+
             db.session.rollback()
             db.session.add(qs)
             db.session.commit()
             flash('Item was successfully added')
+
         # Retrieve data and render the template
         items = Item.query.all()
         totalout = helpers.dbsumint(Item.itemPrice)
         return render_template('reports.html', title=title, item=items, dt=dtCurrent, curDay=dtDay, curMon=dtMon,
-                               totalout=totalout)
+                               totalout=totalout, category_mapping=category_mapping)
     except Exception as e:
         return redirect(url_for('input'))  # Redirect to the "input" route if 500 Internal Server Error
 
