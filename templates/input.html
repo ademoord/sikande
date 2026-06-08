@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="container-fluid">
-    <br>
-    <div class="col">
-      <h5>Assalaam 'alaikum, {{ current_user.username }}!</h5>
-      <h6 style="color:#3C4F76;">Sistem Informasi Keuangan Andro & Dewi</h6>
-      <div class="border">
-      </div>
-      <div class="col">
-        <br>
-        {% include 'forms.html' %}
-      </div>
-    </div>
+<div class="content-card" style="max-width: 620px;">
+  <div class="content-card-header">
+    <h2>Input Pengeluaran</h2>
   </div>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-stack">
+      {% for message in messages %}
+      <div class="flash success">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+  {% include 'forms.html' %}
+</div>
 {% endblock %}

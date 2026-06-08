@@ -1,31 +1,33 @@
 {% extends "base.html" %}
 
-{% block content %}
-	<div class="signup">
-		<!--<h2 class="form-title" id="signup"><span>or</span>Sign up</h2>-->
-		<h2 style="text-align: center; padding: 40px; margin-bottom: -42px;" class="form-title" id="signup">Welcome to Sikande!</h2>
-		<h6 style="text-align: center;">Sistem Informasi Keuangan Andro dan Dewi</h6>
-		<!--<div class="form-holder">-->
-		<!--	<input type="text" class="input" placeholder="Name" />-->
-		<!--	<input type="email" class="input" placeholder="Email" />-->
-		<!--	<input type="password" class="input" placeholder="Password" />-->
-		<!--</div>-->
-		<!--<button class="submit-btn">Sign up</button>-->
-	</div>
+{% block content_public %}
+<div class="login-page">
+  <div class="login-card">
+    <img src="/static/images/logo-S-big-transparent.png" alt="Sikande">
+    <h1>Welcome to Sikande</h1>
+    <p class="login-sub">Sistem Informasi Keuangan Andro &amp; Dewi</p>
 
-    <div class="form-structor">
-        <div class="login slide-up">
-            <div class="center">
-                <!--<h2 class="form-title" id="login"><span>or</span>Log in</h2>-->
-                <h2 class="form-title" id="login">Log in</h2>
-                <form method="post" action="{{ url_for('login') }}">
-                    <div class="form-holder">
-                        <input type="text" class="input" placeholder="Username" name="username" />
-                        <input type="password" class="input" placeholder="Password" name="password" />
-                    </div>
-                    <button type="submit" class="submit-btn">Log in</button>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+      </div>
+      <button type="submit" class="btn-gold"><i class="fas fa-sign-in-alt"></i> Log in</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

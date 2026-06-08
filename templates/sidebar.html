@@ -1,0 +1,49 @@
+<aside class="sidebar">
+  <a href="/dashboard" class="sidebar-brand">
+    <img src="/static/images/logo-S-big-transparent.png" alt="Sikande">
+    <div>
+      <div class="brand-name">Sikande</div>
+      <div class="brand-sub">Sistem Informasi Keuangan</div>
+    </div>
+  </a>
+
+  <ul class="sidebar-nav">
+    <li>
+      <a href="/dashboard" class="{{ 'active' if request.path == '/dashboard' }}">
+        <i class="fas fa-th-large"></i> Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="/input" class="{{ 'active' if request.path == '/input' }}">
+        <i class="fas fa-plus-circle"></i> Input
+      </a>
+    </li>
+    <li>
+      <a href="/reports" class="{{ 'active' if request.path == '/reports' }}">
+        <i class="fas fa-file-invoice-dollar"></i> Reports
+      </a>
+    </li>
+    <li>
+      <a href="/debts" class="{{ 'active' if request.path == '/debts' }}">
+        <i class="fas fa-hand-holding-usd"></i> Debts
+      </a>
+    </li>
+    <li>
+      <a href="/plans" class="{{ 'active' if request.path == '/plans' }}">
+        <i class="fas fa-bullseye"></i> Plans
+      </a>
+    </li>
+    <li>
+      <a href="/settings" class="{{ 'active' if request.path == '/settings' }}">
+        <i class="fas fa-cog"></i> Settings
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-mascot">
+      <img src="/static/images/kabah-sikande.jpg" alt="">
+      <div class="mascot-caption">Keuangan rapi, ibadah happy</div>
+    </div>
+  </div>
+</aside>

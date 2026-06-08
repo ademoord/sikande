@@ -1,73 +1,43 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-    /* Sidebar styling */
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        background-color: #343a40;
-        color: white;
-        padding: 20px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-    }
+<div class="content-card" style="max-width: 720px;">
+  <div class="content-card-header">
+    <h2>Settings</h2>
+  </div>
+  <p style="color: var(--muted); margin-top: -6px;">Backup or maintain your database.</p>
 
-    .sidebar h3 {
-        font-size: 1.5rem;
-        margin-bottom: 30px;
-    }
+  <div class="stat-grid" style="margin-top: 18px;">
+    <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 14px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="stat-icon"><i class="fas fa-database"></i></div>
+        <div class="stat-meta">
+          <div class="stat-value" style="font-size:1.05rem;">Backup Data</div>
+          <div class="stat-label">Download a full SQL dump.</div>
+        </div>
+      </div>
+      <form method="POST" action="/backup" style="width:100%;">
+        <button type="submit" class="btn-gold" style="width:100%; justify-content:center;">
+          <i class="fas fa-download"></i> Backup All Data
+        </button>
+      </form>
+    </div>
 
-    .sidebar button {
-        width: 100%;
-        padding: 15px;
-        margin-bottom: 15px;
-        border: none;
-        background-color: #007bff;
-        color: white;
-        font-size: 1rem;
-        cursor: pointer;
-        border-radius: 5px;
-        transition: background-color 0.3s ease;
-    }
-
-    .sidebar button:hover {
-        background-color: #0056b3;
-    }
-
-    /* Main content styling */
-    .main-content {
-        margin-left: 270px;
-        padding: 20px;
-        height: 100vh;
-        background-color: #f8f9fa;
-    }
-
-    .main-content h1 {
-        font-size: 2rem;
-        margin-bottom: 20px;
-    }
-
-</style>
-
-<!-- Sidebar -->
-<div class="sidebar">
-    <h3>Settings</h3>
-    <form method="POST" action="/backup">
-        <button type="submit">Backup All Data</button>
-    </form>
-    <form method="POST" action="/truncate">
-        <button type="submit">Truncate Item Data</button>
-    </form>
-</div>
-
-<!-- Main content -->
-<div class="main-content">
-    <h1>Welcome to the Settings Page</h1>
-    <p>Here you can backup or truncate data in your database.</p>
+    <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 14px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="stat-icon" style="background: rgba(205,92,92,0.15); color:#cd5c5c;"><i class="fas fa-trash-alt"></i></div>
+        <div class="stat-meta">
+          <div class="stat-value" style="font-size:1.05rem;">Truncate Items</div>
+          <div class="stat-label">Remove all item records.</div>
+        </div>
+      </div>
+      <form method="POST" action="/truncate" style="width:100%;"
+            onsubmit="return confirm('This will delete ALL item records. Continue?');">
+        <button type="submit" class="btn-outline" style="width:100%;">
+          <i class="fas fa-trash-alt"></i> Truncate Item Data
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

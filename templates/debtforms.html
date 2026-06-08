@@ -1,34 +1,23 @@
-<div class="container">
-
 <form action="/debts" method="POST">
-
   <div class="form-group">
     <label>Debt Name</label>
-    <input type="text" class="form-control" id="inputItem"
-    name="debtname" placeholder="Enter Debt Name">
+    <input type="text" class="form-control" id="inputItem" name="debtname" placeholder="Enter debt name" required>
   </div>
 
   <div class="form-group">
     <label>Debt Total</label>
-    <input type="number" class="form-control" id="inputTotal"
-    name="debttotal" placeholder="Enter Debt Total">
+    <input type="number" class="form-control" id="inputTotal" name="debttotal" placeholder="Enter debt total" required>
   </div>
 
   <div class="form-group">
     <label>Creditor</label>
-    <input type="text" class="form-control" id="inputCreditor"
-    name="debtcredit" placeholder="Enter Creditor Name">
+    <input type="text" class="form-control" id="inputCreditor" name="debtcredit" placeholder="Enter creditor name" required>
   </div>
 
   <div class="form-group">
     <label>Debt Deadline</label>
-    <input type="date" class="form-control" id="inputDeadline"
-    name="debtdeadline" placeholder="Enter Deadline">
+    <input type="date" class="form-control" id="inputDeadline" name="debtdeadline">
   </div>
 
-  <br/>
-  <button type="submit" class="btn btn-primary">Input Debt</button>
-
+  <button type="submit" class="btn-gold"><i class="fas fa-plus"></i> Input Debt</button>
 </form>
-
-</div>

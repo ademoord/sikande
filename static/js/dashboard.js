@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Theme-aware text color for chart labels/titles
+    const rootStyles = getComputedStyle(document.documentElement);
+    const textColor = rootStyles.getPropertyValue('--text').trim() || '#2a2722';
+
     // Get the current month and year
     const currentDate = new Date();
     const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -74,10 +78,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     plugins: {
                         legend: {
                             position: 'top',
+                            labels: { color: textColor }
                         },
                         title: {
                             display: true,
-                            text: `Distribusi Pengeluaran di Bulan: ${currentMonth} ${currentYear}`
+                            text: `Distribusi Pengeluaran di Bulan: ${currentMonth} ${currentYear}`,
+                            color: textColor
                         }
                     }
                 }

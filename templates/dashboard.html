@@ -1,16 +1,50 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard">
-    <h2 class="dashboard-title text-center">Sikande Integrated Dashboard!</h2>
-    <div class="chart-container">
-        <canvas id="doughnutChart"></canvas>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Outcome</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(totalout) }}</div>
     </div>
-    <div class="container dashboard-total">
-        <p class="text-center">Total Outcome for <b>{{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b> is:
-        <b>{{ "Rp{:,.2f}".format(totalout) }}</b></p>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Items</div>
+      <div class="stat-value">{{ item_count }}</div>
     </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Debt</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(total_debt) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-file-invoice"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Active Debts</div>
+      <div class="stat-value">{{ debt_count }}</div>
+    </div>
+  </div>
 </div>
+
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>Distribusi Pengeluaran</h2>
+  </div>
+  <div class="chart-container">
+    <canvas id="doughnutChart"></canvas>
+  </div>
+  <p class="text-center" style="margin: 22px 0 0; color: var(--muted);">
+    Total Outcome for <b style="color: var(--text);">{{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b>
+    is <b style="color: var(--gold);">{{ "Rp{:,.2f}".format(totalout) }}</b>
+  </p>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

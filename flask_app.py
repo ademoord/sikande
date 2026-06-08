@@ -36,9 +36,15 @@ def load_user(user_id):
 def dashboard():
     title = "Dashboard"
     totalout = helpers.dbsumint(Item.itemPrice)
+    item_count = Item.query.count()
+    debt_count = Debt.query.count()
+    total_debt = helpers.dbsumint(Debt.debtTotal)
     return render_template('dashboard.html',
                             title=title,
                             totalout=totalout,
+                            item_count=item_count,
+                            debt_count=debt_count,
+                            total_debt=total_debt,
                             dt=dtCurrent)
 
 # Index view

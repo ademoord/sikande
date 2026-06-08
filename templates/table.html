@@ -1,4 +1,3 @@
-<!--<table class="table table-sm">-->
 <table class="custom-table">
   <thead>
     <tr>
@@ -16,11 +15,10 @@
     <tr>
       <td>{{ i.itemName }}</td>
       <td style="text-align:right">{{ "{:,}".format(i.itemPrice) }}</td>
-      <td>{{ category_mapping[i.category] }}</td>
+      <td><span class="badge-cat badge-{{ i.category }}">{{ category_mapping[i.category] }}</span></td>
       <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>
       <td style="text-align:right">
         <button class="action-button edit-button"><i class="fas fa-pencil-alt"></i></button>
-        <!--<button href="/item/del/{{ i.itemID }}" class="action-button delete-button"><i class="fas fa-trash-alt"></i></button>-->
         <button class="action-button delete-button" onclick="confirmDelete('{{ i.itemID }}')">
           <i class="fas fa-trash-alt"></i>
         </button>
@@ -30,4 +28,3 @@
     {% endfor %}
   </tbody>
 </table>
-<div class="border"></div>
