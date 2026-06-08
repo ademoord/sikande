@@ -405,3 +405,15 @@ opacity: 0.8;
   font-weight: bold;
   color: blue;
 }
+
+.chart-container {
+    position: relative;
+    width: 70%;
+    height: 400px;
+    margin: auto;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}

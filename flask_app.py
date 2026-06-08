@@ -3,17 +3,20 @@
 #     author: andromeda
 #     desc: the main app
 #
-import datetime
+# import datetime
+from datetime import datetime
 import helpers
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
 from models import Item, Debt, User
+import os
+import subprocess
 
 # START OF VIEW AND CONTROLLER SECTION
 
 # Create a global var for the needs of time adjustment
-dtCurrent = helpers.gmt7now(datetime.datetime.utcnow)
+dtCurrent = helpers.gmt7now(datetime.utcnow)
 dtDay = dtCurrent.day
 dtMon = dtCurrent.month
 
@@ -26,8 +29,11 @@ def load_user(user_id):
 @app.route('/dashboard')
 def dashboard():
     title = "Dashboard"
+    totalout = helpers.dbsumint(Item.itemPrice)
     return render_template('dashboard.html',
-                            title=title)
+                            title=title,
+                            totalout=totalout,
+                            dt=dtCurrent)
 
 # Index view
 @app.route('/')
@@ -103,7 +109,7 @@ def reports():
             qs = Item(
                 itemName=item,
                 itemPrice=harga,
-                itemTimestamp=helpers.gmt7now(datetime.datetime.utcnow()),
+                itemTimestamp=helpers.gmt7now(datetime.utcnow()),
                 category=category  # Add the selected category
             )
 
@@ -141,7 +147,7 @@ def debts():
         qs = Debt(debtName=request.form["debtname"],                       #
                 debtTotal=request.form["debttotal"],                       #
                 debtCreditor=request.form["debtcredit"],                   # insert the data to db
-                debtReceived=helpers.gmt7now(datetime.datetime.utcnow),            #
+                debtReceived=helpers.gmt7now(datetime.utcnow),            #
                 debtDeadline=request.form["debtdeadline"]                  #
                 )
         db.session.rollback()
@@ -164,8 +170,77 @@ def plans():
     return render_template('plans.html',
                             title=title)
 
-# END OF VIEW AND CONTROLLER SECTION
-# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Settings view
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    title = "Settings"
+    return render_template('settings.html',
+                            title=title)
 
+@app.route('/api/bar_chart_data')
+def bar_chart_data():
+    # Fetch current year and month
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
 
+    # Query to get item data for the current month and year
+    items = db.session.query(
+        Item.category,
+        func.count(Item.id).label('count')
+    ).filter(
+        func.extract('month', Item.date) == current_month,
+        func.extract('year', Item.date) == current_year
+    ).group_by(Item.category).all()
+
+    # Prepare data for the chart
+    labels = [item.category for item in items]
+    values = [item.count for item in items]
+
+    return jsonify({'labels': labels, 'values': values})
+
+@app.route('/api/doughnut_chart_data')
+@login_required
+def doughnut_chart_data():
+    data = db.session.query(
+        Item.category, db.func.count(Item.category)
+    ).group_by(Item.category).all()
+
+    categories = [row[0] for row in data]
+    counts = [row[1] for row in data]
+
+    return {
+        'categories': categories,
+        'counts': counts
+    }
+
+# Route for backup
+@app.route('/backup', methods=['POST'])
+def backup():
+    current_month_year = datetime.now().strftime("%b%y")  # Format like Aug24
+    backup_file = f"sikande{current_month_year}.sql"
+
+    # Construct the backup command
+    command = [
+        "mysqldump", "-u", "sikande", "-h", "sikande.mysql.pythonanywhere-services.com",
+        "--set-gtid-purged=OFF", "--no-tablespaces", "--column-statistics=0",
+        "'sikande$default'", f">{backup_file}"
+    ]
+
+    # Execute the backup command
+    try:
+        subprocess.run(" ".join(command), shell=True, check=True)
+        return redirect(url_for('settings'))
+    except subprocess.CalledProcessError as e:
+        return f"Error during backup: {e}", 500
+
+# Route for truncating 'item' table
+@app.route('/truncate', methods=['POST'])
+def truncate_item():
+    try:
+        db.session.execute('TRUNCATE TABLE item')
+        db.session.commit()
+        return redirect(url_for('settings'))
+    except Exception as e:
+        return f"Error truncating items: {e}", 500
 
