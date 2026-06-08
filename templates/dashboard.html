@@ -32,17 +32,101 @@
   </div>
 </div>
 
-<div class="content-card">
-  <div class="content-card-header">
-    <h2>Distribusi Pengeluaran</h2>
+<h3 class="section-title">Insights</h3>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-star"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Most Frequent Item</div>
+      {% if top_item %}
+      <div class="stat-value">{{ top_item.name }}</div>
+      <div class="stat-label">{{ top_item.count }}x &middot; {{ "Rp{:,.0f}".format(top_item.total) }}</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
   </div>
-  <div class="chart-container">
-    <canvas id="doughnutChart"></canvas>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Top Category (by count)</div>
+      {% if top_cat_count %}
+      <div class="stat-value">{{ top_cat_count.name }}</div>
+      <div class="stat-label">{{ top_cat_count.count }} entries</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
   </div>
-  <p class="text-center" style="margin: 22px 0 0; color: var(--muted);">
-    Total Outcome for <b style="color: var(--text);">{{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b>
-    is <b style="color: var(--gold);">{{ "Rp{:,.2f}".format(totalout) }}</b>
-  </p>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Top Category (by Rp)</div>
+      {% if top_cat_rp %}
+      <div class="stat-value">{{ top_cat_rp.name }}</div>
+      <div class="stat-label">{{ "Rp{:,.0f}".format(top_cat_rp.total) }} &middot; {{ top_cat_rp.pct }}%</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Largest Expense</div>
+      {% if highest_item %}
+      <div class="stat-value">{{ "Rp{:,.0f}".format(highest_item.price) }}</div>
+      <div class="stat-label">{{ highest_item.name }}</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Average per Item</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(avg_item) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2>Spending by Category</h2>
+    </div>
+    {% if category_stats %}
+    <div class="cat-list">
+      {% for c in category_stats %}
+      <div class="cat-row">
+        <div class="cat-row-top">
+          <span class="badge-cat badge-{{ c.key }}">{{ c.name }}</span>
+          <span class="cat-row-meta">{{ "Rp{:,.0f}".format(c.total) }} &middot; {{ c.count }}x &middot; {{ c.pct }}%</span>
+        </div>
+        <div class="cat-bar">
+          <div class="cat-bar-fill" style="width: {{ c.pct }}%; background: {{ c.color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><i class="fas fa-chart-pie"></i><p>No spending data yet.</p></div>
+    {% endif %}
+  </div>
+
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2>Distribusi Pengeluaran</h2>
+    </div>
+    <div class="chart-container">
+      <canvas id="doughnutChart"></canvas>
+    </div>
+    <p class="text-center" style="margin: 22px 0 0; color: var(--muted);">
+      Total Outcome for <b style="color: var(--text);">{{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b>
+      is <b style="color: var(--gold);">{{ "Rp{:,.2f}".format(totalout) }}</b>
+    </p>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

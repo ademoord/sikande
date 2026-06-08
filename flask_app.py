@@ -26,6 +26,25 @@ dtCurrent = helpers.gmt7now(datetime.utcnow)
 dtDay = dtCurrent.day
 dtMon = dtCurrent.month
 
+# Shared category metadata (display names + chart/bar colors)
+CATEGORY_MAPPING = {
+    'needs': 'Kebutuhan Sehari-hari',
+    'liabilities': 'Hutang',
+    'saving': 'Tabungan',
+    'charity': 'Kebaikan',
+    'fun': 'Jajan & Hiburan',
+    'urgent': 'Keperluan Darurat',
+}
+
+CATEGORY_COLORS = {
+    'needs': 'forestgreen',
+    'liabilities': 'mediumpurple',
+    'saving': 'lightskyblue',
+    'charity': 'mediumseagreen',
+    'fun': 'lightsalmon',
+    'urgent': 'indianred',
+}
+
 # User loader view
 @login_manager.user_loader
 def load_user(user_id):
@@ -35,16 +54,70 @@ def load_user(user_id):
 @app.route('/dashboard')
 def dashboard():
     title = "Dashboard"
+    db.session.rollback()
+
     totalout = helpers.dbsumint(Item.itemPrice)
     item_count = Item.query.count()
     debt_count = Debt.query.count()
     total_debt = helpers.dbsumint(Debt.debtTotal)
+    avg_item = round(totalout / item_count) if item_count else 0
+
+    # Totals + counts per category
+    cat_rows = db.session.query(
+        Item.category,
+        db.func.count(Item.itemID),
+        db.func.coalesce(db.func.sum(Item.itemPrice), 0)
+    ).group_by(Item.category).all()
+
+    category_stats = []
+    for cat, cnt, total in cat_rows:
+        total = int(total or 0)
+        category_stats.append({
+            'key': cat,
+            'name': CATEGORY_MAPPING.get(cat, cat),
+            'color': CATEGORY_COLORS.get(cat, '#c9a227'),
+            'count': cnt,
+            'total': total,
+            'pct': round(total / totalout * 100) if totalout else 0,
+        })
+    category_stats.sort(key=lambda c: c['total'], reverse=True)
+
+    # Which category holds the most Rp / most count
+    top_cat_rp = category_stats[0] if category_stats else None
+    top_cat_count = max(category_stats, key=lambda c: c['count']) if category_stats else None
+
+    # Most frequently inputted item (by number of entries)
+    freq_row = db.session.query(
+        Item.itemName,
+        db.func.count(Item.itemID),
+        db.func.coalesce(db.func.sum(Item.itemPrice), 0)
+    ).group_by(Item.itemName).order_by(db.func.count(Item.itemID).desc()).first()
+    top_item = None
+    if freq_row:
+        top_item = {'name': freq_row[0], 'count': freq_row[1], 'total': int(freq_row[2] or 0)}
+
+    # Single largest expense
+    hi = Item.query.order_by(Item.itemPrice.desc()).first()
+    highest_item = None
+    if hi:
+        highest_item = {
+            'name': hi.itemName,
+            'price': hi.itemPrice,
+            'category': CATEGORY_MAPPING.get(hi.category, hi.category),
+        }
+
     return render_template('dashboard.html',
                             title=title,
                             totalout=totalout,
                             item_count=item_count,
                             debt_count=debt_count,
                             total_debt=total_debt,
+                            avg_item=avg_item,
+                            category_stats=category_stats,
+                            top_cat_rp=top_cat_rp,
+                            top_cat_count=top_cat_count,
+                            top_item=top_item,
+                            highest_item=highest_item,
                             dt=dtCurrent)
 
 # Index view

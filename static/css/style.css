@@ -21,6 +21,8 @@
   --sidebar-active-bg: rgba(201, 162, 39, 0.16);
   --shadow: 0 6px 22px rgba(60, 50, 25, 0.08);
   --shadow-sm: 0 2px 10px rgba(60, 50, 25, 0.06);
+  --shadow-lift: 0 16px 34px rgba(60, 50, 25, 0.18);
+  --shadow-lift-sm: 0 8px 18px rgba(60, 50, 25, 0.16);
   --radius: 16px;
   --radius-sm: 12px;
   --sidebar-w: 252px;
@@ -43,6 +45,8 @@ html[data-theme="dark"] {
   --sidebar-active-bg: rgba(212, 175, 55, 0.18);
   --shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 16px 34px rgba(0, 0, 0, 0.6);
+  --shadow-lift-sm: 0 8px 18px rgba(0, 0, 0, 0.5);
 }
 
 /* ---------- Base ---------- */
@@ -277,6 +281,101 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--gold);
 }
 
+/* ---------- Profile dropdown ---------- */
+.profile-menu {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lift);
+  padding: 8px;
+  min-width: 210px;
+  margin-top: 12px;
+}
+
+.profile-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 10px;
+}
+
+.profile-menu-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.profile-menu-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.profile-menu-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-menu-role {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.profile-menu .dropdown-divider {
+  border-top: 1px solid var(--border);
+  margin: 6px 4px;
+}
+
+.profile-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.profile-menu .dropdown-item i {
+  width: 18px;
+  text-align: center;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.profile-menu .dropdown-item:hover,
+.profile-menu .dropdown-item:focus {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.profile-menu .dropdown-item:hover i,
+.profile-menu .dropdown-item:focus i {
+  color: var(--gold);
+}
+
+.profile-menu .dropdown-item:active {
+  background: var(--gold);
+  color: #1c1a17;
+}
+
+.profile-menu .dropdown-item:active i {
+  color: #1c1a17;
+}
+
 /* ---------- Theme pill toggle ---------- */
 .theme-toggle {
   display: inline-flex;
@@ -374,6 +473,11 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--gold);
 }
 
+.stat-meta {
+  min-width: 0;
+  flex: 1;
+}
+
 .stat-meta .stat-label {
   font-size: 0.78rem;
   color: var(--muted);
@@ -383,7 +487,9 @@ h1, h2, h3, h4, h5, h6 {
 .stat-meta .stat-value {
   font-size: 1.35rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ---------- Buttons ---------- */
@@ -568,8 +674,49 @@ select.form-control {
 }
 
 /* ============================================================
-   Dashboard chart
+   Dashboard
    ============================================================ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cat-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.cat-row-meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cat-bar {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gold);
+  transition: width 0.4s ease;
+}
+
 .chart-container {
   position: relative;
   width: 100%;
@@ -748,6 +895,84 @@ select.form-control {
 .flash.error   { border-color: rgba(205, 92, 92, 0.4); }
 
 /* ============================================================
+   3D lift interactions (hover on desktop, press on tap)
+   ============================================================ */
+.stat-card,
+.content-card,
+.login-card,
+.sidebar-mascot,
+.custom-table tbody tr {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.2s ease, border-color 0.2s ease;
+  transform: perspective(800px) translateZ(0);
+}
+
+/* Desktop: lift on hover (only for devices with a real pointer) */
+@media (hover: hover) {
+  .stat-card:hover,
+  .content-card:hover,
+  .login-card:hover,
+  .sidebar-mascot:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .custom-table tbody tr:hover {
+    transform: translateY(-3px) scale(1.005);
+    box-shadow: var(--shadow-lift-sm);
+    position: relative;
+    z-index: 2;
+  }
+
+  .custom-table td {
+    transition: transform 0.15s ease;
+  }
+
+  .custom-table tbody tr:hover td {
+    transform: translateY(-1px);
+  }
+}
+
+/* Press feedback (works for mouse click and touch tap) */
+.stat-card:active,
+.content-card:active,
+.login-card:active,
+.sidebar-mascot:active {
+  transform: translateY(-2px) scale(0.992);
+  box-shadow: var(--shadow-lift-sm);
+}
+
+.custom-table tbody tr:active {
+  transform: translateY(-1px) scale(0.997);
+  box-shadow: var(--shadow-lift-sm);
+  position: relative;
+  z-index: 2;
+}
+
+/* Small interactive bits get a subtle pop too */
+.btn-gold:active,
+.btn.btn-primary:active,
+.btn-outline:active,
+.theme-toggle:active,
+.profile-btn:active,
+.action-button:active,
+.bottom-nav a:active {
+  transform: scale(0.94);
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .stat-card,
+  .content-card,
+  .login-card,
+  .sidebar-mascot,
+  .custom-table tbody tr,
+  .custom-table td {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transform: none !important;
+  }
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 992px) {
@@ -783,18 +1008,46 @@ select.form-control {
   .chart-container {
     height: 300px;
   }
-}
 
-@media (max-width: 420px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
   .stat-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+  }
+
+  .cat-row-meta {
+    font-size: 0.74rem;
+    white-space: normal;
+    text-align: right;
   }
 
   .stat-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    padding: 14px 14px;
+    gap: 12px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .stat-meta .stat-value {
+    font-size: 1.05rem;
+  }
+
+  .stat-meta .stat-label {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
   }
 
   .chart-container {
