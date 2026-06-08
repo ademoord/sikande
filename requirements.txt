@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-Migrate
+SQLAlchemy
+pytz
+
+# Production MySQL driver (not needed for local SQLite development)
+PyMySQL

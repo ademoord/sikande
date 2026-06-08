@@ -406,14 +406,198 @@ opacity: 0.8;
   color: blue;
 }
 
+.dashboard {
+    padding: 20px 0 40px;
+}
+
+.dashboard-title {
+    margin-bottom: 25px;
+}
+
 .chart-container {
     position: relative;
     width: 70%;
     height: 400px;
-    margin: auto;
+    margin: 0 auto;
 }
 
 .chart-container canvas {
     width: 100% !important;
     height: 100% !important;
+}
+
+.dashboard-total {
+    margin-top: 35px;
+}
+
+.dashboard-total p {
+    margin-bottom: 0;
+}
+
+/* Mobile: give the chart room and keep the total from being crowded */
+@media (max-width: 768px) {
+    .chart-container {
+        width: 92%;
+        height: 300px;
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        padding: 0 12px;
+    }
+
+    .dashboard-total {
+        margin-top: 28px;
+        padding: 0 16px;
+    }
+}
+
+@media (max-width: 420px) {
+    .chart-container {
+        width: 100%;
+        height: 260px;
+    }
+}
+
+
+/*==============================================================*/
+/* Theme toggle + dark theme                                    */
+/*==============================================================*/
+
+.theme-toggle {
+  cursor: pointer;
+}
+
+.theme-toggle .theme-toggle-label {
+  margin-left: 6px;
+}
+
+/* Smooth transition when switching themes */
+body,
+.navbar,
+.card,
+.dropdown-menu,
+.dropdown-item,
+.form-control,
+.custom-table th,
+.custom-table td,
+.action-button {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ---------- Dark theme ---------- */
+html[data-theme="dark"] body {
+  background: #121821;
+  color: #e6e6e6;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] p,
+html[data-theme="dark"] label,
+html[data-theme="dark"] span {
+  color: #e6e6e6;
+}
+
+html[data-theme="dark"] a {
+  color: #8ab4f8;
+}
+
+/* Navbar */
+html[data-theme="dark"] .navbar.bg-light {
+  background-color: #1b2430 !important;
+}
+
+html[data-theme="dark"] .navbar-light .navbar-nav .nav-link {
+  color: #cbd3da;
+}
+
+html[data-theme="dark"] .navbar-light .navbar-nav .nav-link:hover,
+html[data-theme="dark"] .navbar-light .navbar-nav .nav-link.active {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+html[data-theme="dark"] .navbar-light .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Dropdown */
+html[data-theme="dark"] .dropdown-menu {
+  background-color: #1b2430;
+  border-color: #2a3543;
+}
+
+html[data-theme="dark"] .dropdown-item {
+  color: #cbd3da;
+}
+
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-item:focus {
+  background-color: #2a3543;
+  color: #ffffff;
+}
+
+/* Cards */
+html[data-theme="dark"] .card {
+  background-color: #1b2430;
+  border-color: #2a3543;
+  color: #e6e6e6;
+}
+
+/* Tables */
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .table td,
+html[data-theme="dark"] .table th {
+  color: #e6e6e6;
+  border-color: #2a3543;
+}
+
+html[data-theme="dark"] .custom-table th,
+html[data-theme="dark"] .custom-table td {
+  background-color: #1b2430;
+  color: #e6e6e6;
+  border-bottom-color: #2a3543;
+}
+
+html[data-theme="dark"] .custom-table th {
+  background-color: #222d3a;
+}
+
+html[data-theme="dark"] .custom-table tbody tr:hover {
+  background-color: #26303d;
+}
+
+/* Forms */
+html[data-theme="dark"] .form-control {
+  background-color: #222d3a;
+  color: #e6e6e6;
+  border-color: #2a3543;
+}
+
+html[data-theme="dark"] .form-control:focus {
+  background-color: #222d3a;
+  color: #ffffff;
+  border-color: #4a6fa5;
+  box-shadow: 0 0 0 0.2rem rgba(74, 111, 165, 0.25);
+}
+
+html[data-theme="dark"] .form-control::placeholder {
+  color: #8a949e;
+}
+
+/* Misc */
+html[data-theme="dark"] .action-button {
+  color: #cbd3da;
+}
+
+html[data-theme="dark"] .scroll-to-top-button {
+  background-color: #4a6fa5;
 }

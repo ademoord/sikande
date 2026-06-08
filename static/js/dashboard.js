@@ -6,11 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentMonth = monthNames[currentDate.getMonth()];
     const currentYear = currentDate.getFullYear();
 
-    // Fetch data for the bar chart
+    // Fetch data for the bar chart (only if the bar chart canvas is present)
+    const barChartEl = document.getElementById('barChart');
+    if (barChartEl) {
     fetch('/api/bar_chart_data')
         .then(response => response.json())
         .then(data => {
-            const ctxBar = document.getElementById('barChart').getContext('2d');
+            const ctxBar = barChartEl.getContext('2d');
             new Chart(ctxBar, {
                 type: 'bar',
                 data: {
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
 
     // Fetch data for the doughnut chart
     fetch('/api/doughnut_chart_data')

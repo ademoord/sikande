@@ -15,6 +15,9 @@ instance/
 # Database files
 db.sqlite3
 
+# Local placeholder data (used only for local dev; production uses config.txt -> MySQL)
+data/
+
 # Static files
 /static/uploads/
 

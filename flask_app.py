@@ -13,6 +13,12 @@ from models import Item, Debt, User
 import os
 import subprocess
 
+# When running locally (no production config.txt), build and seed a local
+# SQLite database with placeholder data. This is a no-op in production.
+if app.config.get('LOCAL_DEV'):
+    from seed import seed_if_local
+    seed_if_local()
+
 # START OF VIEW AND CONTROLLER SECTION
 
 # Create a global var for the needs of time adjustment
@@ -187,10 +193,10 @@ def bar_chart_data():
     # Query to get item data for the current month and year
     items = db.session.query(
         Item.category,
-        func.count(Item.id).label('count')
+        db.func.count(Item.itemID).label('count')
     ).filter(
-        func.extract('month', Item.date) == current_month,
-        func.extract('year', Item.date) == current_year
+        db.func.extract('month', Item.itemTimestamp) == current_month,
+        db.func.extract('year', Item.itemTimestamp) == current_year
     ).group_by(Item.category).all()
 
     # Prepare data for the chart
@@ -243,4 +249,10 @@ def truncate_item():
         return redirect(url_for('settings'))
     except Exception as e:
         return f"Error truncating items: {e}", 500
+
+
+# Local development entry point. In production the app is served via WSGI,
+# so this block is ignored there.
+if __name__ == '__main__':
+    app.run(debug=True)
 
