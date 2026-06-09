@@ -25,6 +25,18 @@ if app.config.get('LOCAL_DEV'):
     from seed import seed_if_local
     seed_if_local()
 
+
+@app.after_request
+def set_security_headers(response):
+    # In production, PythonAnywhere terminates TLS at its proxy and forwards the
+    # request to the app with X-Forwarded-Proto: https. When the visitor is on
+    # HTTPS, emit HSTS so browsers (especially mobile) auto-upgrade any future
+    # http:// visit to https:// on their own. Never sent during local http dev,
+    # so it can't force-https your localhost.
+    if not app.config.get('LOCAL_DEV') and request.headers.get('X-Forwarded-Proto') == 'https':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    return response
+
 # START OF VIEW AND CONTROLLER SECTION
 
 # Create a global var for the needs of time adjustment
