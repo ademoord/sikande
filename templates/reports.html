@@ -24,4 +24,56 @@
 <button class="scroll-to-top-button" onclick="scrollToTop()">
   <i class="fas fa-arrow-up"></i>
 </button>
+
+<!-- Edit item modal -->
+<div class="modal-overlay" id="editModal" onclick="if (event.target === this) closeEditModal()">
+  <div class="sk-modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="sk-modal-header">
+      <h3 id="editModalTitle"><i class="fas fa-pen"></i> Edit Pengeluaran</h3>
+      <button type="button" class="modal-close" onclick="closeEditModal()" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="editForm" method="POST" action="">
+      <div class="form-group">
+        <label for="editItem">Item</label>
+        <input type="text" class="form-control" id="editItem" name="item" placeholder="Item name" required>
+      </div>
+      <div class="form-group">
+        <label for="editHarga">Price</label>
+        <input type="number" class="form-control" id="editHarga" name="harga" placeholder="Item price" required>
+      </div>
+      <div class="form-group">
+        <label for="editCategory">Category</label>
+        <select class="form-control" id="editCategory" name="category">
+          {% for key, name in category_mapping.items() %}
+          <option value="{{ key }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="sk-modal-footer">
+        <button type="button" class="btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openEditModal(btn) {
+    document.getElementById('editForm').action = '/item/edit/' + btn.getAttribute('data-id');
+    document.getElementById('editItem').value = btn.getAttribute('data-name');
+    document.getElementById('editHarga').value = btn.getAttribute('data-price');
+    document.getElementById('editCategory').value = btn.getAttribute('data-category');
+    document.getElementById('editModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeEditModal();
+  });
+</script>
 {% endblock %}

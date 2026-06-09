@@ -211,6 +211,28 @@ def reports():
     except Exception as e:
         return redirect(url_for('input'))  # Redirect to the "input" route if 500 Internal Server Error
 
+# Edit item view
+# Uses the SQLAlchemy ORM, so it emits an UPDATE against whatever database
+# config.py selected: SQLite locally, MySQL in production. Same code, both envs.
+@app.route('/item/edit/<int:itemID>', methods=['POST'])
+@login_required
+def edit_item(itemID):
+    allowed_categories = ('needs', 'liabilities', 'saving', 'charity', 'fun', 'urgent')
+    try:
+        item = Item.query.get(itemID)
+        if item:
+            item.itemName = request.form['item'].strip()
+            item.itemPrice = int(request.form['harga'])
+            category = request.form['category']
+            if category in allowed_categories:
+                item.category = category
+            db.session.commit()
+            flash('Item was successfully updated')
+    except Exception as e:
+        db.session.rollback()
+        flash('Failed to update item.', 'error')
+    return redirect(url_for('reports'))
+
 # Delete item view
 @app.route('/item/del/<int:itemID>', methods=['GET', 'POST'])
 @login_required

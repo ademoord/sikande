@@ -18,7 +18,14 @@
       <td><span class="badge-cat badge-{{ i.category }}">{{ category_mapping[i.category] }}</span></td>
       <td style="text-align:right">{{ i.itemTimestamp.ctime()[:3] + comma + i.itemTimestamp.ctime()[3:11] }}</td>
       <td style="text-align:right">
-        <button class="action-button edit-button"><i class="fas fa-pencil-alt"></i></button>
+        <button class="action-button edit-button"
+                data-id="{{ i.itemID }}"
+                data-name="{{ i.itemName }}"
+                data-price="{{ i.itemPrice }}"
+                data-category="{{ i.category }}"
+                onclick="openEditModal(this)">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
         <button class="action-button delete-button" onclick="confirmDelete('{{ i.itemID }}')">
           <i class="fas fa-trash-alt"></i>
         </button>
