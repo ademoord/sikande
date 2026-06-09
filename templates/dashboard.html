@@ -129,6 +129,82 @@
   </div>
 </div>
 
+<h3 class="section-title">Portfolio</h3>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Invested</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(portfolio.total_invested) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Current Value</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(portfolio.total_value) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Gain / Loss</div>
+      <div class="stat-value {{ 'gain-pos' if portfolio.total_gain >= 0 else 'gain-neg' }}">{{ "Rp{:,.0f}".format(portfolio.total_gain) }}</div>
+      <div class="stat-label {{ 'gain-pos' if portfolio.total_gain >= 0 else 'gain-neg' }}">{{ "{:+.1f}%".format(portfolio.total_gain_pct) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Best Performer</div>
+      {% if portfolio.best %}
+      <div class="stat-value">{{ portfolio.best.asset }}</div>
+      <div class="stat-label gain-pos">{{ "{:+.1f}%".format(portfolio.best.gain_pct) }}</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2>Portfolio Allocation</h2>
+    </div>
+    {% if portfolio.allocation %}
+    <div class="cat-list">
+      {% for a in portfolio.allocation %}
+      <div class="cat-row">
+        <div class="cat-row-top">
+          <span class="badge-cat badge-inv-{{ a.type }}">{{ a.name }}</span>
+          <span class="cat-row-meta">{{ "Rp{:,.0f}".format(a.value) }} &middot; {{ a.pct }}%</span>
+        </div>
+        <div class="cat-bar">
+          <div class="cat-bar-fill" style="width: {{ a.pct }}%; background: {{ a.color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><i class="fas fa-coins"></i><p>No investments yet. <a href="/invest">Add one</a>.</p></div>
+    {% endif %}
+  </div>
+
+  <div class="content-card">
+    <div class="content-card-header">
+      <h2>Investment Distribution</h2>
+    </div>
+    {% if portfolio.allocation %}
+    <div class="chart-container">
+      <canvas id="investmentChart"></canvas>
+    </div>
+    {% else %}
+    <div class="empty-state"><i class="fas fa-chart-pie"></i><p>Add investments to see the chart.</p></div>
+    {% endif %}
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -31,6 +31,19 @@ class Debt(db.Model):
     def __repr__(self):
         return '<Debt {}>'.format(self.debtName)
 
+# Investment model
+class Investment(db.Model):
+    invID = db.Column(db.Integer, primary_key=True)
+    invType = db.Column(db.String(20), index=True)   # gold, bitcoin, stock, currency
+    asset = db.Column(db.String(40), index=True)     # Antam / HRTA / BTC / ETH / ticker / USD
+    quantity = db.Column(db.Float)                    # grams (gold) or units (others)
+    buyPrice = db.Column(db.Float)                    # purchase price per unit (Rp)
+    currentPrice = db.Column(db.Float)               # latest market price per unit (Rp)
+    invTimestamp = db.Column(db.DateTime, index=True)
+
+    def __repr__(self):
+        return '<Investment {} {}>'.format(self.invType, self.asset)
+
 # User model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

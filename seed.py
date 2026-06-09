@@ -12,7 +12,7 @@ import csv
 from datetime import datetime
 
 from config import app, db
-from models import Item, Debt, User
+from models import Item, Debt, User, Investment
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 
@@ -68,6 +68,17 @@ def seed():
                 db.session.add(User(
                     username=row['username'],
                     password=row['password'],
+                ))
+
+        if Investment.query.first() is None:
+            for row in _read_csv('investments.csv'):
+                db.session.add(Investment(
+                    invType=row['invType'],
+                    asset=row['asset'],
+                    quantity=float(row['quantity']),
+                    buyPrice=float(row['buyPrice']),
+                    currentPrice=float(row['currentPrice']),
+                    invTimestamp=_parse_dt(row['invTimestamp']),
                 ))
 
         db.session.commit()

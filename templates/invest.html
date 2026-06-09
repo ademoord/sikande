@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Portfolio summary -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Invested</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(portfolio.total_invested) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-sack-dollar"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Current Value</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(portfolio.total_value) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Gain / Loss</div>
+      <div class="stat-value {{ 'gain-pos' if portfolio.total_gain >= 0 else 'gain-neg' }}">
+        {{ "Rp{:,.0f}".format(portfolio.total_gain) }}
+      </div>
+      <div class="stat-label {{ 'gain-pos' if portfolio.total_gain >= 0 else 'gain-neg' }}">
+        {{ "{:+.1f}%".format(portfolio.total_gain_pct) }}
+      </div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Best Performer</div>
+      {% if portfolio.best %}
+      <div class="stat-value">{{ portfolio.best.asset }}</div>
+      <div class="stat-label gain-pos">{{ "{:+.1f}%".format(portfolio.best.gain_pct) }}</div>
+      {% else %}
+      <div class="stat-value">-</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add investment form -->
+<div class="content-card" style="max-width: 640px;">
+  <div class="content-card-header">
+    <h2>Add Investment</h2>
+  </div>
+  <form action="/invest" method="POST">
+    <div class="form-group">
+      <label for="invType">Investment Type</label>
+      <select class="form-control" id="invType" name="invtype" onchange="updateInvFields()">
+        <option value="gold">Gold</option>
+        <option value="bitcoin">Crypto</option>
+        <option value="stock">Stock</option>
+        <option value="currency">Currency</option>
+      </select>
+    </div>
+
+    <div class="form-group inv-group" id="grp-gold">
+      <label for="assetGold">Gold Brand</label>
+      <select class="form-control" id="assetGold" name="asset_gold">
+        {% for b in gold_brands %}
+        <option value="{{ b }}">{{ b }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group inv-group" id="grp-crypto" style="display:none;">
+      <label for="assetCrypto">Coin</label>
+      <select class="form-control" id="assetCrypto" name="asset_crypto">
+        {% for c in crypto_coins %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group inv-group" id="grp-stock" style="display:none;">
+      <label for="assetStock">Stock Ticker</label>
+      <input type="text" class="form-control" id="assetStock" name="asset_stock" placeholder="e.g. BBCA">
+    </div>
+
+    <div class="form-group inv-group" id="grp-currency" style="display:none;">
+      <label for="assetCurrency">Currency Code</label>
+      <input type="text" class="form-control" id="assetCurrency" name="asset_currency" placeholder="e.g. USD">
+    </div>
+
+    <div class="form-group">
+      <label for="quantity">Quantity <span style="color:var(--muted);font-weight:400;">(grams for gold, units for others)</span></label>
+      <input type="number" step="any" class="form-control" id="quantity" name="quantity" placeholder="e.g. 10" required>
+    </div>
+
+    <div class="form-group">
+      <label for="buyPrice">Buy Price per unit (Rp)</label>
+      <input type="number" step="any" class="form-control" id="buyPrice" name="buyprice" placeholder="Price when purchased" required>
+    </div>
+
+    <div class="form-group">
+      <label for="currentPrice">Current Price per unit (Rp)</label>
+      <input type="number" step="any" class="form-control" id="currentPrice" name="currentprice" placeholder="Latest market price" required>
+    </div>
+
+    <button type="submit" class="btn-gold"><i class="fas fa-plus"></i> Add Investment</button>
+  </form>
+</div>
+
+<!-- Holdings table -->
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>My Holdings</h2>
+  </div>
+  {% if portfolio.holdings %}
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Asset</th>
+          <th style="text-align:right">Qty</th>
+          <th style="text-align:right">Buy / unit</th>
+          <th style="text-align:right">Now / unit</th>
+          <th style="text-align:right">Value</th>
+          <th style="text-align:right">Gain / Loss</th>
+          <th style="text-align:right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in portfolio.holdings %}
+        <tr>
+          <td><span class="badge-cat badge-inv-{{ h.type }}">{{ h.type_name }}</span></td>
+          <td>{{ h.asset }}</td>
+          <td style="text-align:right">{{ "{:g}".format(h.quantity) }}</td>
+          <td style="text-align:right">{{ "Rp{:,.0f}".format(h.buyPrice) }}</td>
+          <td style="text-align:right">{{ "Rp{:,.0f}".format(h.currentPrice) }}</td>
+          <td style="text-align:right">{{ "Rp{:,.0f}".format(h.value) }}</td>
+          <td style="text-align:right" class="{{ 'gain-pos' if h.gain >= 0 else 'gain-neg' }}">
+            {{ "Rp{:,.0f}".format(h.gain) }}<br>
+            <small>{{ "{:+.1f}%".format(h.gain_pct) }}</small>
+          </td>
+          <td style="text-align:right">
+            <button class="action-button edit-button"
+                    data-id="{{ h.id }}"
+                    data-asset="{{ h.asset }}"
+                    data-quantity="{{ h.quantity }}"
+                    data-buyprice="{{ h.buyPrice }}"
+                    data-currentprice="{{ h.currentPrice }}"
+                    onclick="openInvEdit(this)">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button class="action-button delete-button" onclick="confirmDeleteInv('{{ h.id }}')">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-coins"></i>
+    <h3>No investments yet</h3>
+    <p>Add your first gold bar, crypto, stock, or currency above.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Edit investment modal -->
+<div class="modal-overlay" id="invEditModal" onclick="if (event.target === this) closeInvEdit()">
+  <div class="sk-modal" role="dialog" aria-modal="true" aria-labelledby="invEditTitle">
+    <div class="sk-modal-header">
+      <h3 id="invEditTitle"><i class="fas fa-pen"></i> Edit Investment</h3>
+      <button type="button" class="modal-close" onclick="closeInvEdit()" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="invEditForm" method="POST" action="">
+      <div class="form-group">
+        <label for="invEditAsset">Asset</label>
+        <input type="text" class="form-control" id="invEditAsset" name="asset" required>
+      </div>
+      <div class="form-group">
+        <label for="invEditQty">Quantity</label>
+        <input type="number" step="any" class="form-control" id="invEditQty" name="quantity" required>
+      </div>
+      <div class="form-group">
+        <label for="invEditBuy">Buy Price per unit (Rp)</label>
+        <input type="number" step="any" class="form-control" id="invEditBuy" name="buyprice" required>
+      </div>
+      <div class="form-group">
+        <label for="invEditNow">Current Price per unit (Rp)</label>
+        <input type="number" step="any" class="form-control" id="invEditNow" name="currentprice" required>
+      </div>
+      <div class="sk-modal-footer">
+        <button type="button" class="btn-outline" onclick="closeInvEdit()">Cancel</button>
+        <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function updateInvFields() {
+    var type = document.getElementById('invType').value;
+    var map = { gold: 'grp-gold', bitcoin: 'grp-crypto', stock: 'grp-stock', currency: 'grp-currency' };
+    Object.keys(map).forEach(function (key) {
+      var grp = document.getElementById(map[key]);
+      var show = key === type;
+      grp.style.display = show ? '' : 'none';
+      var field = grp.querySelector('input, select');
+      if (field) field.disabled = !show;
+    });
+  }
+
+  function openInvEdit(btn) {
+    document.getElementById('invEditForm').action = '/invest/edit/' + btn.getAttribute('data-id');
+    document.getElementById('invEditAsset').value = btn.getAttribute('data-asset');
+    document.getElementById('invEditQty').value = btn.getAttribute('data-quantity');
+    document.getElementById('invEditBuy').value = btn.getAttribute('data-buyprice');
+    document.getElementById('invEditNow').value = btn.getAttribute('data-currentprice');
+    document.getElementById('invEditModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeInvEdit() {
+    document.getElementById('invEditModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function confirmDeleteInv(id) {
+    if (confirm('Delete this investment?')) window.location.href = '/invest/del/' + id;
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeInvEdit(); });
+  updateInvFields();
+</script>
+{% endblock %}

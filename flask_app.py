@@ -9,9 +9,15 @@ import helpers
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
-from models import Item, Debt, User
+from models import Item, Debt, User, Investment
 import os
 import subprocess
+
+# Ensure all tables exist in whichever database is configured. create_all only
+# creates missing tables (it never alters/drops), so this safely adds new tables
+# like `investment` on a production MySQL reload without a manual migration.
+with app.app_context():
+    db.create_all()
 
 # When running locally (no production config.txt), build and seed a local
 # SQLite database with placeholder data. This is a no-op in production.
@@ -44,6 +50,38 @@ CATEGORY_COLORS = {
     'fun': 'lightsalmon',
     'urgent': 'indianred',
 }
+
+# Investment metadata
+INVESTMENT_TYPES = {
+    'gold': 'Gold',
+    'bitcoin': 'Crypto',
+    'stock': 'Stock',
+    'currency': 'Currency',
+}
+
+GOLD_BRANDS = ['Antam', 'HRTA', 'BullionKey', 'Lotus', 'Other']
+CRYPTO_COINS = ['BTC', 'ETH']
+ALLOWED_INV_TYPES = tuple(INVESTMENT_TYPES.keys())
+
+INVESTMENT_COLORS = {
+    'gold': 'goldenrod',
+    'bitcoin': 'darkorange',
+    'stock': 'steelblue',
+    'currency': 'mediumseagreen',
+}
+
+
+def _investment_form_asset(inv_type, form):
+    """Resolve the asset/brand/symbol from the right sub-field for each type."""
+    if inv_type == 'gold':
+        return (form.get('asset_gold') or '').strip()
+    if inv_type == 'bitcoin':
+        return (form.get('asset_crypto') or '').strip()
+    if inv_type == 'stock':
+        return (form.get('asset_stock') or '').strip().upper()
+    if inv_type == 'currency':
+        return (form.get('asset_currency') or '').strip().upper()
+    return ''
 
 # User loader view
 @login_manager.user_loader
@@ -106,6 +144,8 @@ def dashboard():
             'category': CATEGORY_MAPPING.get(hi.category, hi.category),
         }
 
+    portfolio = compute_portfolio()
+
     return render_template('dashboard.html',
                             title=title,
                             totalout=totalout,
@@ -118,6 +158,7 @@ def dashboard():
                             top_cat_count=top_cat_count,
                             top_item=top_item,
                             highest_item=highest_item,
+                            portfolio=portfolio,
                             dt=dtCurrent)
 
 # Index view
@@ -277,6 +318,141 @@ def plans():
     return render_template('plans.html',
                             title=title)
 
+
+def compute_portfolio():
+    """Compute per-holding valuation, totals, and allocation by type."""
+    investments = Investment.query.order_by(Investment.invTimestamp.desc()).all()
+
+    holdings = []
+    total_invested = 0.0
+    total_value = 0.0
+    alloc = {}  # by type: current value
+
+    for inv in investments:
+        qty = inv.quantity or 0
+        invested = qty * (inv.buyPrice or 0)
+        value = qty * (inv.currentPrice or 0)
+        gain = value - invested
+        gain_pct = (gain / invested * 100) if invested else 0
+
+        total_invested += invested
+        total_value += value
+        alloc[inv.invType] = alloc.get(inv.invType, 0) + value
+
+        holdings.append({
+            'id': inv.invID,
+            'type': inv.invType,
+            'type_name': INVESTMENT_TYPES.get(inv.invType, inv.invType),
+            'asset': inv.asset,
+            'quantity': qty,
+            'buyPrice': inv.buyPrice or 0,
+            'currentPrice': inv.currentPrice or 0,
+            'invested': invested,
+            'value': value,
+            'gain': gain,
+            'gain_pct': gain_pct,
+        })
+
+    total_gain = total_value - total_invested
+    total_gain_pct = (total_gain / total_invested * 100) if total_invested else 0
+
+    # Best / worst performer by gain %
+    best = max(holdings, key=lambda h: h['gain_pct']) if holdings else None
+
+    # Allocation (by type) for the donut chart
+    allocation = [
+        {
+            'type': t,
+            'name': INVESTMENT_TYPES.get(t, t),
+            'color': INVESTMENT_COLORS.get(t, '#c9a227'),
+            'value': v,
+            'pct': round(v / total_value * 100) if total_value else 0,
+        }
+        for t, v in alloc.items()
+    ]
+    allocation.sort(key=lambda a: a['value'], reverse=True)
+
+    return {
+        'holdings': holdings,
+        'total_invested': total_invested,
+        'total_value': total_value,
+        'total_gain': total_gain,
+        'total_gain_pct': total_gain_pct,
+        'best': best,
+        'allocation': allocation,
+    }
+
+
+# Invest view (list + add)
+@app.route('/invest', methods=['GET', 'POST'])
+@login_required
+def invest():
+    title = "Invest"
+    if request.method == 'POST':
+        try:
+            inv_type = request.form['invtype']
+            asset = _investment_form_asset(inv_type, request.form)
+            if inv_type in ALLOWED_INV_TYPES and asset:
+                qs = Investment(
+                    invType=inv_type,
+                    asset=asset,
+                    quantity=float(request.form['quantity']),
+                    buyPrice=float(request.form['buyprice']),
+                    currentPrice=float(request.form['currentprice']),
+                    invTimestamp=helpers.gmt7now(datetime.utcnow()),
+                )
+                db.session.rollback()
+                db.session.add(qs)
+                db.session.commit()
+                flash('Investment was successfully added')
+            else:
+                flash('Please complete the investment form.', 'error')
+        except Exception:
+            db.session.rollback()
+            flash('Failed to add investment.', 'error')
+        return redirect(url_for('invest'))
+
+    portfolio = compute_portfolio()
+    return render_template('invest.html',
+                            title=title,
+                            portfolio=portfolio,
+                            gold_brands=GOLD_BRANDS,
+                            crypto_coins=CRYPTO_COINS,
+                            dt=dtCurrent)
+
+
+# Edit investment (ORM UPDATE -> SQLite locally, MySQL in production)
+@app.route('/invest/edit/<int:invID>', methods=['POST'])
+@login_required
+def edit_investment(invID):
+    try:
+        inv = Investment.query.get(invID)
+        if inv:
+            inv.asset = request.form['asset'].strip()
+            inv.quantity = float(request.form['quantity'])
+            inv.buyPrice = float(request.form['buyprice'])
+            inv.currentPrice = float(request.form['currentprice'])
+            db.session.commit()
+            flash('Investment was successfully updated')
+    except Exception:
+        db.session.rollback()
+        flash('Failed to update investment.', 'error')
+    return redirect(url_for('invest'))
+
+
+# Delete investment
+@app.route('/invest/del/<int:invID>', methods=['GET', 'POST'])
+@login_required
+def delete_investment(invID):
+    try:
+        inv = Investment.query.get(invID)
+        if inv:
+            db.session.delete(inv)
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return redirect(url_for('invest'))
+
 # Settings view
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -320,6 +496,16 @@ def doughnut_chart_data():
         'categories': categories,
         'counts': counts
     }
+
+@app.route('/api/investment_chart_data')
+@login_required
+def investment_chart_data():
+    portfolio = compute_portfolio()
+    return jsonify({
+        'labels': [a['name'] for a in portfolio['allocation']],
+        'values': [round(a['value']) for a in portfolio['allocation']],
+        'colors': [a['color'] for a in portfolio['allocation']],
+    })
 
 # Route for backup
 @app.route('/backup', methods=['POST'])

@@ -89,4 +89,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+    // Investment distribution doughnut (only if its canvas is present)
+    const investmentEl = document.getElementById('investmentChart');
+    if (investmentEl) {
+        fetch('/api/investment_chart_data')
+            .then(response => response.json())
+            .then(data => {
+                new Chart(investmentEl.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.values,
+                            backgroundColor: data.colors
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { color: textColor }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Portfolio Allocation (Current Value)',
+                                color: textColor
+                            }
+                        }
+                    }
+                });
+            });
+    }
 });
