@@ -720,6 +720,23 @@ select.form-control {
   color: var(--muted);
 }
 
+.form-hint {
+  margin: -6px 0 16px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.form-hint i {
+  margin-right: 5px;
+  color: var(--gold);
+}
+
+.form-hint a {
+  color: var(--gold);
+  font-weight: 600;
+}
+
 /* ---------- Tables ---------- */
 .custom-table {
   border-collapse: separate;

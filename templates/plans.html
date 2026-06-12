@@ -23,8 +23,9 @@
   <div class="stat-card">
     <div class="stat-icon"><i class="fas fa-piggy-bank"></i></div>
     <div class="stat-meta">
-      <div class="stat-label">Total Saved</div>
+      <div class="stat-label">Saved So Far</div>
       <div class="stat-value">{{ "Rp{:,.0f}".format(plans.total_saved) }}</div>
+      <div class="stat-label">from <a href="/invest">Total Invested</a></div>
     </div>
   </div>
   <div class="stat-card">
@@ -65,10 +66,7 @@
       <label for="planTarget">Target Amount (Rp)</label>
       <input type="number" step="any" class="form-control" id="planTarget" name="target" placeholder="e.g. 35000000" required>
     </div>
-    <div class="form-group">
-      <label for="planSaved">Saved So Far (Rp)</label>
-      <input type="number" step="any" class="form-control" id="planSaved" name="saved" placeholder="e.g. 12000000" value="0">
-    </div>
+    <p class="form-hint"><i class="fas fa-link"></i> Saved progress is synced automatically from <a href="/invest">Total Invested</a> in your portfolio.</p>
     <div class="form-group">
       <label for="planDate">Target Date</label>
       <input type="date" class="form-control" id="planDate" name="targetdate">
@@ -94,7 +92,6 @@
                 data-name="{{ g.name }}"
                 data-type="{{ g.type }}"
                 data-target="{{ g.target }}"
-                data-saved="{{ g.saved }}"
                 data-date="{{ g.target_date.strftime('%Y-%m-%d') if g.target_date else '' }}"
                 onclick="openPlanEdit(this)">
           <i class="fas fa-pencil-alt"></i>
@@ -166,10 +163,7 @@
         <label for="planEditTarget">Target Amount (Rp)</label>
         <input type="number" step="any" class="form-control" id="planEditTarget" name="target" required>
       </div>
-      <div class="form-group">
-        <label for="planEditSaved">Saved So Far (Rp)</label>
-        <input type="number" step="any" class="form-control" id="planEditSaved" name="saved" required>
-      </div>
+      <p class="form-hint"><i class="fas fa-link"></i> Saved: {{ "Rp{:,.0f}".format(plans.total_invested) }} (auto from Total Invested)</p>
       <div class="form-group">
         <label for="planEditDate">Target Date</label>
         <input type="date" class="form-control" id="planEditDate" name="targetdate">
@@ -188,7 +182,6 @@
     document.getElementById('planEditName').value = btn.getAttribute('data-name');
     document.getElementById('planEditType').value = btn.getAttribute('data-type');
     document.getElementById('planEditTarget').value = btn.getAttribute('data-target');
-    document.getElementById('planEditSaved').value = btn.getAttribute('data-saved');
     document.getElementById('planEditDate').value = btn.getAttribute('data-date');
     document.getElementById('planEditModal').classList.add('open');
     document.body.style.overflow = 'hidden';

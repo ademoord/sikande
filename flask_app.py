@@ -362,23 +362,26 @@ def debts():
                             totaldebt=totaldebt)
 
 def compute_plans():
-    """Compute progress, status, and 'monthly needed' for each savings goal."""
+    """Compute progress, status, and 'monthly needed' for each savings goal.
+
+    Saved progress is driven by portfolio Total Invested (sum of buy cost across
+    all holdings in Invest), so goals stay in sync when investments change.
+    """
     plans = Plan.query.order_by(Plan.targetDate.asc()).all()
     now = datetime.now()
+    total_invested = compute_portfolio()['total_invested']
 
     goals = []
     total_target = 0.0
-    total_saved = 0.0
 
     for p in plans:
         target = p.targetAmount or 0
-        saved = p.savedAmount or 0
+        saved = total_invested
         remaining = max(target - saved, 0)
         pct = round(saved / target * 100) if target else 0
         pct_bar = min(pct, 100)
 
         total_target += target
-        total_saved += saved
 
         months_left = None
         monthly_needed = None
@@ -424,12 +427,13 @@ def compute_plans():
             'status_key': status_key,
         })
 
-    overall_pct = round(total_saved / total_target * 100) if total_target else 0
+    overall_pct = round(total_invested / total_target * 100) if total_target else 0
 
     return {
         'goals': goals,
         'total_target': total_target,
-        'total_saved': total_saved,
+        'total_saved': total_invested,
+        'total_invested': total_invested,
         'overall_pct': overall_pct,
         'count': len(goals),
     }
@@ -449,7 +453,7 @@ def plans():
                     planName=name,
                     planType=plan_type,
                     targetAmount=float(request.form['target']),
-                    savedAmount=float(request.form.get('saved') or 0),
+                    savedAmount=0,
                     targetDate=_parse_date(request.form.get('targetdate')),
                     planTimestamp=helpers.gmt7now(datetime.utcnow()).replace(tzinfo=None),
                 )
@@ -483,7 +487,6 @@ def edit_plan(planID):
             if plan_type in ALLOWED_PLAN_TYPES:
                 p.planType = plan_type
             p.targetAmount = float(request.form['target'])
-            p.savedAmount = float(request.form.get('saved') or 0)
             new_date = _parse_date(request.form.get('targetdate'))
             if new_date:
                 p.targetDate = new_date
