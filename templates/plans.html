@@ -1,11 +1,205 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Summary -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Target</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(plans.total_target) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-piggy-bank"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Total Saved</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(plans.total_saved) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Overall Progress</div>
+      <div class="stat-value">{{ plans.overall_pct }}%</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-list-check"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Active Goals</div>
+      <div class="stat-value">{{ plans.count }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add goal -->
+<div class="content-card" style="max-width: 640px;">
+  <div class="content-card-header">
+    <h2>Add Goal</h2>
+  </div>
+  <form action="/plans" method="POST">
+    <div class="form-group">
+      <label for="planName">Goal Name</label>
+      <input type="text" class="form-control" id="planName" name="planname" placeholder="e.g. Umrah Pilgrimage" required>
+    </div>
+    <div class="form-group">
+      <label for="planType">Goal Type</label>
+      <select class="form-control" id="planType" name="plantype">
+        {% for key, name in plan_types.items() %}
+        <option value="{{ key }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="planTarget">Target Amount (Rp)</label>
+      <input type="number" step="any" class="form-control" id="planTarget" name="target" placeholder="e.g. 35000000" required>
+    </div>
+    <div class="form-group">
+      <label for="planSaved">Saved So Far (Rp)</label>
+      <input type="number" step="any" class="form-control" id="planSaved" name="saved" placeholder="e.g. 12000000" value="0">
+    </div>
+    <div class="form-group">
+      <label for="planDate">Target Date</label>
+      <input type="date" class="form-control" id="planDate" name="targetdate">
+    </div>
+    <button type="submit" class="btn-gold"><i class="fas fa-plus"></i> Add Goal</button>
+  </form>
+</div>
+
+<!-- Goals -->
+{% if plans.goals %}
+<div class="goal-grid">
+  {% for g in plans.goals %}
+  <div class="content-card goal-card">
+    <div class="goal-head">
+      <div class="goal-icon" style="color: {{ g.color }};"><i class="fas {{ g.icon }}"></i></div>
+      <div class="goal-head-info">
+        <div class="goal-name">{{ g.name }}</div>
+        <span class="badge-cat badge-plan-{{ g.status_key }}">{{ g.status }}</span>
+      </div>
+      <div class="goal-actions">
+        <button class="action-button edit-button"
+                data-id="{{ g.id }}"
+                data-name="{{ g.name }}"
+                data-type="{{ g.type }}"
+                data-target="{{ g.target }}"
+                data-saved="{{ g.saved }}"
+                data-date="{{ g.target_date.strftime('%Y-%m-%d') if g.target_date else '' }}"
+                onclick="openPlanEdit(this)">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="action-button delete-button" onclick="confirmDeletePlan('{{ g.id }}')">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="goal-amounts">
+      <span class="goal-saved">{{ "Rp{:,.0f}".format(g.saved) }}</span>
+      <span class="goal-target">of {{ "Rp{:,.0f}".format(g.target) }}</span>
+    </div>
+
+    <div class="cat-bar">
+      <div class="cat-bar-fill" style="width: {{ g.pct_bar }}%; background: {{ g.color }};"></div>
+    </div>
+
+    <div class="goal-meta-row">
+      <span class="goal-pct">{{ g.pct }}%</span>
+      <span>{{ "Rp{:,.0f}".format(g.remaining) }} to go</span>
+    </div>
+
+    <div class="goal-foot">
+      {% if g.target_date %}
+      <span><i class="far fa-calendar-alt"></i> {{ g.target_date.strftime('%b %Y') }}</span>
+      {% endif %}
+      {% if g.monthly_needed %}
+      <span><i class="fas fa-piggy-bank"></i> {{ "Rp{:,.0f}".format(g.monthly_needed) }}/mo needed</span>
+      {% elif g.status_key == 'achieved' %}
+      <span class="gain-pos"><i class="fas fa-check-circle"></i> Goal reached</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
 <div class="content-card">
   <div class="empty-state">
     <i class="fas fa-bullseye"></i>
-    <h3>Plans</h3>
-    <p>Plan your finance goals here. This feature is coming soon, insya Allah.</p>
+    <h3>No goals yet</h3>
+    <p>Add your first savings goal above (Umrah, a house, an electric car, anything).</p>
   </div>
 </div>
+{% endif %}
+
+<!-- Edit goal modal -->
+<div class="modal-overlay" id="planEditModal" onclick="if (event.target === this) closePlanEdit()">
+  <div class="sk-modal" role="dialog" aria-modal="true" aria-labelledby="planEditTitle">
+    <div class="sk-modal-header">
+      <h3 id="planEditTitle"><i class="fas fa-pen"></i> Edit Goal</h3>
+      <button type="button" class="modal-close" onclick="closePlanEdit()" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="planEditForm" method="POST" action="">
+      <div class="form-group">
+        <label for="planEditName">Goal Name</label>
+        <input type="text" class="form-control" id="planEditName" name="planname" required>
+      </div>
+      <div class="form-group">
+        <label for="planEditType">Goal Type</label>
+        <select class="form-control" id="planEditType" name="plantype">
+          {% for key, name in plan_types.items() %}
+          <option value="{{ key }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="planEditTarget">Target Amount (Rp)</label>
+        <input type="number" step="any" class="form-control" id="planEditTarget" name="target" required>
+      </div>
+      <div class="form-group">
+        <label for="planEditSaved">Saved So Far (Rp)</label>
+        <input type="number" step="any" class="form-control" id="planEditSaved" name="saved" required>
+      </div>
+      <div class="form-group">
+        <label for="planEditDate">Target Date</label>
+        <input type="date" class="form-control" id="planEditDate" name="targetdate">
+      </div>
+      <div class="sk-modal-footer">
+        <button type="button" class="btn-outline" onclick="closePlanEdit()">Cancel</button>
+        <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openPlanEdit(btn) {
+    document.getElementById('planEditForm').action = '/plans/edit/' + btn.getAttribute('data-id');
+    document.getElementById('planEditName').value = btn.getAttribute('data-name');
+    document.getElementById('planEditType').value = btn.getAttribute('data-type');
+    document.getElementById('planEditTarget').value = btn.getAttribute('data-target');
+    document.getElementById('planEditSaved').value = btn.getAttribute('data-saved');
+    document.getElementById('planEditDate').value = btn.getAttribute('data-date');
+    document.getElementById('planEditModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePlanEdit() {
+    document.getElementById('planEditModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function confirmDeletePlan(id) {
+    if (confirm('Delete this goal?')) window.location.href = '/plans/del/' + id;
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePlanEdit(); });
+</script>
 {% endblock %}

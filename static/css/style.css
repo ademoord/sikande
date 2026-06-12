@@ -535,6 +535,14 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--gold);
 }
 
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ---------- Badges ---------- */
 .badge-cat {
   display: inline-block;
@@ -558,9 +566,118 @@ h1, h2, h3, h4, h5, h6 {
 .badge-inv-stock    { background: rgba(70, 130, 180, 0.18);  color: #4682b4; }
 .badge-inv-currency { background: rgba(60, 179, 113, 0.18);  color: #34a877; }
 
+/* Plan / goal status badges */
+.badge-plan-achieved { background: rgba(46, 139, 46, 0.16);  color: #2e8b2e; }
+.badge-plan-ontrack  { background: rgba(70, 130, 180, 0.18); color: #4682b4; }
+.badge-plan-behind   { background: rgba(255, 160, 122, 0.22); color: #d9744a; }
+.badge-plan-overdue  { background: rgba(205, 92, 92, 0.18);  color: #cd5c5c; }
+
 /* Gain / loss text */
 .gain-pos { color: #2e8b2e !important; }
 .gain-neg { color: #cd5c5c !important; }
+
+/* ---------- Savings goal cards ---------- */
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.goal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.goal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.goal-icon {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--bg-alt);
+  font-size: 1.25rem;
+}
+
+.goal-head-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.goal-head-info .badge-cat {
+  align-self: flex-start;
+}
+
+.goal-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.goal-amounts {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.goal-saved {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.goal-target {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.goal-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.goal-pct {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.goal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.goal-foot i {
+  margin-right: 4px;
+}
 
 /* ---------- Forms ---------- */
 .form-group {

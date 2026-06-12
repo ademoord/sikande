@@ -9,7 +9,7 @@ import helpers
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
-from models import Item, Debt, User, Investment
+from models import Item, Debt, User, Investment, Plan
 import os
 import subprocess
 
@@ -81,6 +81,42 @@ INVESTMENT_COLORS = {
     'stock': 'steelblue',
     'currency': 'mediumseagreen',
 }
+
+
+# Plan (savings goal) metadata
+PLAN_TYPES = {
+    'umrah': 'Umrah',
+    'house': 'House',
+    'car': 'Electric Car',
+    'other': 'Other',
+}
+
+PLAN_ICONS = {
+    'umrah': 'fa-kaaba',
+    'house': 'fa-home',
+    'car': 'fa-car-side',
+    'other': 'fa-bullseye',
+}
+
+PLAN_COLORS = {
+    'umrah': 'goldenrod',
+    'house': 'steelblue',
+    'car': 'mediumseagreen',
+    'other': '#c9a227',
+}
+
+ALLOWED_PLAN_TYPES = tuple(PLAN_TYPES.keys())
+
+
+def _parse_date(value):
+    """Parse a YYYY-MM-DD value from an <input type='date'> into a naive datetime."""
+    value = (value or '').strip()
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, '%Y-%m-%d')
+    except ValueError:
+        return None
 
 
 def _investment_form_asset(inv_type, form):
@@ -157,6 +193,7 @@ def dashboard():
         }
 
     portfolio = compute_portfolio()
+    plans_summary = compute_plans()
 
     return render_template('dashboard.html',
                             title=title,
@@ -171,6 +208,7 @@ def dashboard():
                             top_item=top_item,
                             highest_item=highest_item,
                             portfolio=portfolio,
+                            plans_summary=plans_summary,
                             dt=dtCurrent)
 
 # Index view
@@ -323,12 +361,151 @@ def debts():
                             dt=dtCurrent,
                             totaldebt=totaldebt)
 
-# Plans view
+def compute_plans():
+    """Compute progress, status, and 'monthly needed' for each savings goal."""
+    plans = Plan.query.order_by(Plan.targetDate.asc()).all()
+    now = datetime.now()
+
+    goals = []
+    total_target = 0.0
+    total_saved = 0.0
+
+    for p in plans:
+        target = p.targetAmount or 0
+        saved = p.savedAmount or 0
+        remaining = max(target - saved, 0)
+        pct = round(saved / target * 100) if target else 0
+        pct_bar = min(pct, 100)
+
+        total_target += target
+        total_saved += saved
+
+        months_left = None
+        monthly_needed = None
+        days_left = None
+        if p.targetDate:
+            days_left = (p.targetDate - now).days
+            if remaining > 0 and days_left > 0:
+                months_left = max(1, round(days_left / 30.44))
+                monthly_needed = remaining / months_left
+
+        # Status
+        if target and saved >= target:
+            status, status_key = 'Achieved', 'achieved'
+        elif p.targetDate and days_left is not None and days_left < 0:
+            status, status_key = 'Overdue', 'overdue'
+        elif p.targetDate and p.planTimestamp:
+            total_span = (p.targetDate - p.planTimestamp).total_seconds()
+            elapsed = (now - p.planTimestamp).total_seconds()
+            expected = (elapsed / total_span * 100) if total_span > 0 else 0
+            if pct >= expected:
+                status, status_key = 'On Track', 'ontrack'
+            else:
+                status, status_key = 'Behind', 'behind'
+        else:
+            status, status_key = 'In Progress', 'ontrack'
+
+        goals.append({
+            'id': p.planID,
+            'name': p.planName,
+            'type': p.planType,
+            'type_name': PLAN_TYPES.get(p.planType, p.planType),
+            'icon': PLAN_ICONS.get(p.planType, 'fa-bullseye'),
+            'color': PLAN_COLORS.get(p.planType, '#c9a227'),
+            'target': target,
+            'saved': saved,
+            'remaining': remaining,
+            'pct': pct,
+            'pct_bar': pct_bar,
+            'target_date': p.targetDate,
+            'months_left': months_left,
+            'monthly_needed': monthly_needed,
+            'status': status,
+            'status_key': status_key,
+        })
+
+    overall_pct = round(total_saved / total_target * 100) if total_target else 0
+
+    return {
+        'goals': goals,
+        'total_target': total_target,
+        'total_saved': total_saved,
+        'overall_pct': overall_pct,
+        'count': len(goals),
+    }
+
+
+# Plans view (list + add)
 @app.route('/plans', methods=['GET', 'POST'])
+@login_required
 def plans():
     title = "Plans"
+    if request.method == 'POST':
+        try:
+            plan_type = request.form['plantype']
+            name = request.form['planname'].strip()
+            if plan_type in ALLOWED_PLAN_TYPES and name:
+                qs = Plan(
+                    planName=name,
+                    planType=plan_type,
+                    targetAmount=float(request.form['target']),
+                    savedAmount=float(request.form.get('saved') or 0),
+                    targetDate=_parse_date(request.form.get('targetdate')),
+                    planTimestamp=helpers.gmt7now(datetime.utcnow()).replace(tzinfo=None),
+                )
+                db.session.rollback()
+                db.session.add(qs)
+                db.session.commit()
+                flash('Goal was successfully added')
+            else:
+                flash('Please complete the goal form.', 'error')
+        except Exception:
+            db.session.rollback()
+            flash('Failed to add goal.', 'error')
+        return redirect(url_for('plans'))
+
+    portfolio_plans = compute_plans()
     return render_template('plans.html',
-                            title=title)
+                            title=title,
+                            plans=portfolio_plans,
+                            plan_types=PLAN_TYPES,
+                            dt=dtCurrent)
+
+
+@app.route('/plans/edit/<int:planID>', methods=['POST'])
+@login_required
+def edit_plan(planID):
+    try:
+        p = Plan.query.get(planID)
+        if p:
+            p.planName = request.form['planname'].strip()
+            plan_type = request.form.get('plantype')
+            if plan_type in ALLOWED_PLAN_TYPES:
+                p.planType = plan_type
+            p.targetAmount = float(request.form['target'])
+            p.savedAmount = float(request.form.get('saved') or 0)
+            new_date = _parse_date(request.form.get('targetdate'))
+            if new_date:
+                p.targetDate = new_date
+            db.session.commit()
+            flash('Goal was successfully updated')
+    except Exception:
+        db.session.rollback()
+        flash('Failed to update goal.', 'error')
+    return redirect(url_for('plans'))
+
+
+@app.route('/plans/del/<int:planID>', methods=['GET', 'POST'])
+@login_required
+def delete_plan(planID):
+    try:
+        p = Plan.query.get(planID)
+        if p:
+            db.session.delete(p)
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return redirect(url_for('plans'))
 
 
 def compute_portfolio():

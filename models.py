@@ -31,6 +31,19 @@ class Debt(db.Model):
     def __repr__(self):
         return '<Debt {}>'.format(self.debtName)
 
+# Plan model (savings goals)
+class Plan(db.Model):
+    planID = db.Column(db.Integer, primary_key=True)
+    planName = db.Column(db.String(80), index=True)
+    planType = db.Column(db.String(20), index=True)   # umrah, house, car, other
+    targetAmount = db.Column(db.Float)
+    savedAmount = db.Column(db.Float)
+    targetDate = db.Column(db.DateTime, index=True)
+    planTimestamp = db.Column(db.DateTime, index=True)  # created/start date
+
+    def __repr__(self):
+        return '<Plan {}>'.format(self.planName)
+
 # Investment model
 class Investment(db.Model):
     invID = db.Column(db.Integer, primary_key=True)

@@ -129,6 +129,57 @@
   </div>
 </div>
 
+{% if plans_summary and plans_summary.goals %}
+<h3 class="section-title">Goals</h3>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Saved Toward Goals</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(plans_summary.total_saved) }}</div>
+      <div class="stat-label">of {{ "Rp{:,.0f}".format(plans_summary.total_target) }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Overall Progress</div>
+      <div class="stat-value">{{ plans_summary.overall_pct }}%</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-list-check"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Active Goals</div>
+      <div class="stat-value">{{ plans_summary.count }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>Goal Progress</h2>
+    <a href="/plans" class="btn-outline btn-sm"><i class="fas fa-bullseye"></i> Manage</a>
+  </div>
+  <div class="cat-list">
+    {% for g in plans_summary.goals %}
+    <div class="cat-row">
+      <div class="cat-row-top">
+        <span><i class="fas {{ g.icon }}" style="color: {{ g.color }}; margin-right: 6px;"></i>{{ g.name }}</span>
+        <span class="cat-row-meta">
+          {{ "Rp{:,.0f}".format(g.saved) }} / {{ "Rp{:,.0f}".format(g.target) }} &middot; {{ g.pct }}%
+          {% if g.monthly_needed %}&middot; {{ "Rp{:,.0f}".format(g.monthly_needed) }}/mo{% endif %}
+        </span>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-bar-fill" style="width: {{ g.pct_bar }}%; background: {{ g.color }};"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <h3 class="section-title">Portfolio</h3>
 <div class="stat-grid">
   <div class="stat-card">
