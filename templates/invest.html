@@ -53,6 +53,37 @@
   </div>
 </div>
 
+{% if portfolio.live_rates or portfolio.live_gold %}
+<div class="content-card live-rates-card">
+  <div class="content-card-header">
+    <h2><i class="fas fa-sync-alt"></i> Live Market Prices</h2>
+    <span class="live-badge"><i class="fas fa-circle"></i> Auto-updated</span>
+  </div>
+  <div class="live-rates-grid">
+    {% for brand, meta in portfolio.live_gold.items() %}
+    <div class="live-rate-item">
+      <span class="live-rate-pair">{{ brand }} Gold</span>
+      <span class="live-rate-value">{{ "Rp{:,.0f}".format(meta.rate) }}/gr</span>
+      <span class="live-rate-meta">
+        {% if meta.stale %}cached{% else %}updated {{ meta.date or 'recently' }}{% endif %}
+        {% if meta.price_type %} · {{ meta.price_type }}{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+    {% for code, meta in portfolio.live_rates.items() %}
+    <div class="live-rate-item">
+      <span class="live-rate-pair">{{ code }}/IDR</span>
+      <span class="live-rate-value">{{ "Rp{:,.2f}".format(meta.rate) }}</span>
+      <span class="live-rate-meta">
+        {% if meta.stale %}cached{% else %}updated {{ meta.date or 'recently' }}{% endif %}
+        {% if meta.price_type %} · {{ meta.price_type }}{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- Add investment form -->
 <div class="content-card" style="max-width: 640px;">
   <div class="content-card-header">
@@ -71,7 +102,7 @@
 
     <div class="form-group inv-group" id="grp-gold">
       <label for="assetGold">Gold Brand</label>
-      <select class="form-control" id="assetGold" name="asset_gold">
+      <select class="form-control" id="assetGold" name="asset_gold" onchange="refreshLivePrice()">
         {% for b in gold_brands %}
         <option value="{{ b }}">{{ b }}</option>
         {% endfor %}
@@ -93,8 +124,12 @@
     </div>
 
     <div class="form-group inv-group" id="grp-currency" style="display:none;">
-      <label for="assetCurrency">Currency Code</label>
-      <input type="text" class="form-control" id="assetCurrency" name="asset_currency" placeholder="e.g. USD">
+      <label for="assetCurrency">Currency</label>
+      <select class="form-control" id="assetCurrency" name="asset_currency" onchange="refreshLivePrice()">
+        {% for c in currency_codes %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
     </div>
 
     <div class="form-group">
@@ -104,12 +139,21 @@
 
     <div class="form-group">
       <label for="buyPrice">Buy Price per unit (Rp)</label>
-      <input type="number" step="any" class="form-control" id="buyPrice" name="buyprice" placeholder="Price when purchased" required>
+      <input type="number" step="any" class="form-control" id="buyPrice" name="buyprice" placeholder="Rate when purchased" required>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="grp-current-manual">
       <label for="currentPrice">Current Price per unit (Rp)</label>
-      <input type="number" step="any" class="form-control" id="currentPrice" name="currentprice" placeholder="Latest market price" required>
+      <input type="number" step="any" class="form-control" id="currentPrice" name="currentprice" placeholder="Latest market price">
+    </div>
+
+    <div class="form-group" id="grp-current-live" style="display:none;">
+      <label id="livePriceLabel">Current Price (live)</label>
+      <div class="live-rate-box" id="liveRateBox">
+        <span class="live-rate-box-value" id="liveRateValue">Loading…</span>
+        <span class="live-rate-box-meta" id="liveRateMeta"></span>
+      </div>
+      <input type="hidden" id="currentPriceLive" name="currentprice" value="" disabled>
     </div>
 
     <button type="submit" class="btn-gold"><i class="fas fa-plus"></i> Add Investment</button>
@@ -143,7 +187,10 @@
           <td>{{ h.asset }}</td>
           <td style="text-align:right">{{ "{:g}".format(h.quantity) }}</td>
           <td style="text-align:right">{{ "Rp{:,.0f}".format(h.buyPrice) }}</td>
-          <td style="text-align:right">{{ "Rp{:,.0f}".format(h.currentPrice) }}</td>
+          <td style="text-align:right">
+            {{ "Rp{:,.0f}".format(h.currentPrice) }}
+            {% if h.is_live_rate %}<br><small class="live-tag">live</small>{% endif %}
+          </td>
           <td style="text-align:right">{{ "Rp{:,.0f}".format(h.value) }}</td>
           <td style="text-align:right" class="{{ 'gain-pos' if h.gain >= 0 else 'gain-neg' }}">
             {{ "Rp{:,.0f}".format(h.gain) }}<br>
@@ -152,6 +199,7 @@
           <td style="text-align:right">
             <button class="action-button edit-button"
                     data-id="{{ h.id }}"
+                    data-type="{{ h.type }}"
                     data-asset="{{ h.asset }}"
                     data-quantity="{{ h.quantity }}"
                     data-buyprice="{{ h.buyPrice }}"
@@ -197,10 +245,13 @@
         <label for="invEditBuy">Buy Price per unit (Rp)</label>
         <input type="number" step="any" class="form-control" id="invEditBuy" name="buyprice" required>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="invEditNowGroup">
         <label for="invEditNow">Current Price per unit (Rp)</label>
-        <input type="number" step="any" class="form-control" id="invEditNow" name="currentprice" required>
+        <input type="number" step="any" class="form-control" id="invEditNow" name="currentprice">
       </div>
+      <p class="form-hint" id="invEditLiveHint" style="display:none;">
+        <i class="fas fa-sync-alt"></i> Current price is fetched live from market API on save.
+      </p>
       <div class="sk-modal-footer">
         <button type="button" class="btn-outline" onclick="closeInvEdit()">Cancel</button>
         <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Save Changes</button>
@@ -210,6 +261,68 @@
 </div>
 
 <script>
+  function isCurrencyType() {
+    return document.getElementById('invType').value === 'currency';
+  }
+
+  function isGoldLiveType() {
+    return document.getElementById('invType').value === 'gold'
+      && document.getElementById('assetGold').value !== 'Other';
+  }
+
+  function isLivePriceType() {
+    return isCurrencyType() || isGoldLiveType();
+  }
+
+  function toggleCurrentPriceFields() {
+    var live = isLivePriceType();
+    document.getElementById('grp-current-manual').style.display = live ? 'none' : '';
+    document.getElementById('grp-current-live').style.display = live ? '' : 'none';
+    document.getElementById('currentPrice').required = !live;
+    document.getElementById('currentPrice').disabled = live;
+    document.getElementById('currentPriceLive').disabled = !live;
+    document.getElementById('livePriceLabel').textContent =
+      isCurrencyType() ? 'Current Rate (live)' : 'Current Price per gram (live)';
+    if (live) refreshLivePrice();
+  }
+
+  function refreshLivePrice() {
+    if (!isLivePriceType()) return;
+    var valueEl = document.getElementById('liveRateValue');
+    var metaEl = document.getElementById('liveRateMeta');
+    valueEl.textContent = 'Loading…';
+    metaEl.textContent = '';
+
+    var url;
+    if (isCurrencyType()) {
+      var code = document.getElementById('assetCurrency').value;
+      url = '/api/exchange_rate/' + encodeURIComponent(code);
+    } else {
+      var brand = document.getElementById('assetGold').value;
+      url = '/api/gold_price/' + encodeURIComponent(brand);
+    }
+
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) throw new Error(data.error);
+        if (data.rate_idr !== undefined) {
+          valueEl.textContent = 'Rp ' + Number(data.rate_idr).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+          metaEl.textContent = '1 ' + data.currency + ' · ' + (data.stale ? 'cached' : (data.date || 'live'));
+          document.getElementById('currentPriceLive').value = data.rate_idr;
+        } else {
+          valueEl.textContent = 'Rp ' + Number(data.price_idr).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + '/gr';
+          metaEl.textContent = data.brand + ' · ' + (data.stale ? 'cached' : (data.date || 'live'))
+            + (data.price_type ? ' · ' + data.price_type : '');
+          document.getElementById('currentPriceLive').value = data.price_idr;
+        }
+      })
+      .catch(function () {
+        valueEl.textContent = 'Price unavailable';
+        metaEl.textContent = 'Check API connection or try again';
+      });
+  }
+
   function updateInvFields() {
     var type = document.getElementById('invType').value;
     var map = { gold: 'grp-gold', bitcoin: 'grp-crypto', stock: 'grp-stock', currency: 'grp-currency' };
@@ -220,14 +333,21 @@
       var field = grp.querySelector('input, select');
       if (field) field.disabled = !show;
     });
+    toggleCurrentPriceFields();
   }
 
   function openInvEdit(btn) {
+    var invType = btn.getAttribute('data-type');
+    var asset = btn.getAttribute('data-asset');
+    var isLive = invType === 'currency' || (invType === 'gold' && asset !== 'Other');
     document.getElementById('invEditForm').action = '/invest/edit/' + btn.getAttribute('data-id');
-    document.getElementById('invEditAsset').value = btn.getAttribute('data-asset');
+    document.getElementById('invEditAsset').value = asset;
     document.getElementById('invEditQty').value = btn.getAttribute('data-quantity');
     document.getElementById('invEditBuy').value = btn.getAttribute('data-buyprice');
     document.getElementById('invEditNow').value = btn.getAttribute('data-currentprice');
+    document.getElementById('invEditNowGroup').style.display = isLive ? 'none' : '';
+    document.getElementById('invEditNow').required = !isLive;
+    document.getElementById('invEditLiveHint').style.display = isLive ? '' : 'none';
     document.getElementById('invEditModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }

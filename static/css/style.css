@@ -679,6 +679,101 @@ h1, h2, h3, h4, h5, h6 {
   margin-right: 4px;
 }
 
+/* ---------- Live exchange rates ---------- */
+.live-rates-card .content-card-header {
+  align-items: center;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #2e8b2e;
+  background: rgba(46, 139, 46, 0.12);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.live-badge i {
+  font-size: 0.45rem;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.live-rates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.live-rate-item {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-rate-pair {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.live-rate-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.live-rate-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.live-rate-box {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-rate-box-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.live-rate-box-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.live-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2e8b2e;
+  background: rgba(46, 139, 46, 0.12);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
 /* ---------- Forms ---------- */
 .form-group {
   margin-bottom: 16px;

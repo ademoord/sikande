@@ -6,6 +6,8 @@
 # import datetime
 from datetime import datetime
 import helpers
+import exchange_rates
+import gold_prices
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
@@ -73,6 +75,7 @@ INVESTMENT_TYPES = {
 
 GOLD_BRANDS = ['Antam', 'HRTA', 'BullionKey', 'Lotus', 'Other']
 CRYPTO_COINS = ['BTC', 'ETH']
+CURRENCY_CODES = ['USD', 'EUR', 'SGD', 'JPY', 'AUD', 'GBP', 'CNY', 'MYR']
 ALLOWED_INV_TYPES = tuple(INVESTMENT_TYPES.keys())
 
 INVESTMENT_COLORS = {
@@ -130,6 +133,17 @@ def _investment_form_asset(inv_type, form):
     if inv_type == 'currency':
         return (form.get('asset_currency') or '').strip().upper()
     return ''
+
+
+def _investment_current_price(inv_type, asset, form):
+    """Resolve current price; currency and gold use live market rates."""
+    if inv_type == 'currency':
+        rate, _ = exchange_rates.resolve_currency_price(asset, form.get('currentprice'))
+        return rate
+    if inv_type == 'gold':
+        rate, _ = gold_prices.resolve_gold_price(asset, form.get('currentprice'))
+        return rate
+    return float(form['currentprice'])
 
 # User loader view
 @login_manager.user_loader
@@ -519,11 +533,30 @@ def compute_portfolio():
     total_invested = 0.0
     total_value = 0.0
     alloc = {}  # by type: current value
+    live_rates = {}
+    live_gold = {}
 
     for inv in investments:
         qty = inv.quantity or 0
         invested = qty * (inv.buyPrice or 0)
-        value = qty * (inv.currentPrice or 0)
+        current_price = inv.currentPrice or 0
+        rate_meta = None
+        is_live_rate = False
+
+        if inv.invType == 'currency':
+            current_price, rate_meta = exchange_rates.resolve_currency_price(
+                inv.asset, inv.currentPrice)
+            is_live_rate = not rate_meta.get('fallback') and not rate_meta.get('error')
+            if inv.asset:
+                live_rates[inv.asset.upper()] = rate_meta
+        elif inv.invType == 'gold' and inv.asset and inv.asset != 'Other':
+            current_price, rate_meta = gold_prices.resolve_gold_price(
+                inv.asset, inv.currentPrice)
+            is_live_rate = not rate_meta.get('fallback') and not rate_meta.get('error')
+            if is_live_rate and rate_meta.get('rate') is not None:
+                live_gold[inv.asset] = rate_meta
+
+        value = qty * current_price
         gain = value - invested
         gain_pct = (gain / invested * 100) if invested else 0
 
@@ -538,7 +571,9 @@ def compute_portfolio():
             'asset': inv.asset,
             'quantity': qty,
             'buyPrice': inv.buyPrice or 0,
-            'currentPrice': inv.currentPrice or 0,
+            'currentPrice': current_price,
+            'is_live_rate': is_live_rate,
+            'rate_meta': rate_meta,
             'invested': invested,
             'value': value,
             'gain': gain,
@@ -572,6 +607,8 @@ def compute_portfolio():
         'total_gain_pct': total_gain_pct,
         'best': best,
         'allocation': allocation,
+        'live_rates': live_rates,
+        'live_gold': live_gold,
     }
 
 
@@ -590,7 +627,7 @@ def invest():
                     asset=asset,
                     quantity=float(request.form['quantity']),
                     buyPrice=float(request.form['buyprice']),
-                    currentPrice=float(request.form['currentprice']),
+                    currentPrice=_investment_current_price(inv_type, asset, request.form),
                     invTimestamp=helpers.gmt7now(datetime.utcnow()),
                 )
                 db.session.rollback()
@@ -610,6 +647,7 @@ def invest():
                             portfolio=portfolio,
                             gold_brands=GOLD_BRANDS,
                             crypto_coins=CRYPTO_COINS,
+                            currency_codes=CURRENCY_CODES,
                             dt=dtCurrent)
 
 
@@ -623,7 +661,7 @@ def edit_investment(invID):
             inv.asset = request.form['asset'].strip()
             inv.quantity = float(request.form['quantity'])
             inv.buyPrice = float(request.form['buyprice'])
-            inv.currentPrice = float(request.form['currentprice'])
+            inv.currentPrice = _investment_current_price(inv.invType, inv.asset, request.form)
             db.session.commit()
             flash('Investment was successfully updated')
     except Exception:
@@ -698,6 +736,38 @@ def investment_chart_data():
         'values': [round(a['value']) for a in portfolio['allocation']],
         'colors': [a['color'] for a in portfolio['allocation']],
     })
+
+@app.route('/api/gold_price/<brand>')
+@login_required
+def gold_price_api(brand):
+    price, meta = gold_prices.get_gold_price(brand)
+    if price is None:
+        return jsonify({'error': 'Price unavailable', 'brand': brand}), 503
+    return jsonify({
+        'brand': brand,
+        'price_idr': round(price, 0),
+        'unit': 'gr',
+        'date': meta.get('date'),
+        'source': meta.get('source'),
+        'price_type': meta.get('price_type'),
+        'stale': meta.get('stale', False),
+    })
+
+
+@app.route('/api/exchange_rate/<code>')
+@login_required
+def exchange_rate_api(code):
+    rate, meta = exchange_rates.get_idr_rate(code)
+    if rate is None:
+        return jsonify({'error': 'Rate unavailable', 'currency': code.upper()}), 503
+    return jsonify({
+        'currency': code.upper(),
+        'rate_idr': round(rate, 2),
+        'date': meta.get('date'),
+        'source': meta.get('source'),
+        'stale': meta.get('stale', False),
+    })
+
 
 # Route for backup
 @app.route('/backup', methods=['POST'])

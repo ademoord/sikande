@@ -33,6 +33,8 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(data_dir, 'local.sqlite3')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'local-dev-secret-key'
+    app.config['GOLD_API_BASE_URL'] = os.environ.get(
+        'GOLD_API_BASE_URL', 'https://logam-mulia-api.iamutaki.workers.dev')
 
 login_manager = LoginManager(app)
 
