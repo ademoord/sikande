@@ -6,12 +6,15 @@ from urllib.request import Request, urlopen
 
 from lotus_scraper import fetch_lotus_buyback_price
 
-# Sikande brand -> Logam Mulia API source slug (Lotus uses lotus_scraper.py)
+# Sikande brand -> Logam Mulia API source slug
 GOLD_BRAND_SOURCES = {
     'HRTA': 'emasku',
     'Antam': 'logammulia',
     'BullionKey': 'sampoernagold',
 }
+
+# When lotusarchi.com is blocked (e.g. PythonAnywhere), fall back to this API source.
+LOTUS_API_FALLBACK = 'hartadinataabadi'
 
 # Prefer standard bullion rows when a source lists multiple product lines.
 PREFERRED_GOLD_TYPES = ('Emas Batangan',)
@@ -80,15 +83,8 @@ def _price_per_gram(items):
     return total / weight, row.get('recordedDate'), price_type
 
 
-def _fetch_brand_prices(brand):
-    if brand == 'Lotus':
-        price, info = fetch_lotus_buyback_price()
-        return price, info
-
-    source = GOLD_BRAND_SOURCES.get(brand)
-    if not source:
-        return None, {'error': 'unsupported brand', 'brand': brand}
-
+def _fetch_api_source(source):
+    """Fetch and parse gold price rows from Logam Mulia API."""
     url = '{}/api/prices/{}'.format(_get_base_url(), source)
     req = Request(url, headers={'User-Agent': 'Sikande/1.0', 'Accept': 'application/json'})
     with urlopen(req, timeout=12) as resp:
@@ -108,6 +104,31 @@ def _fetch_brand_prices(brand):
         'display_name': payload.get('source') or source,
         'price_type': price_type,
     }
+
+
+def _fetch_lotus_prices():
+    """Scrape lotusarchi.com; fall back to Logam API when outbound scrape is blocked."""
+    try:
+        price, info = fetch_lotus_buyback_price()
+        return price, info
+    except (URLError, ValueError, OSError) as exc:
+        price, info = _fetch_api_source(LOTUS_API_FALLBACK)
+        info = dict(info)
+        info['source'] = 'hartadinataabadi (Lotus fallback)'
+        info['scrape_fallback'] = True
+        info['scrape_error'] = str(exc)
+        return price, info
+
+
+def _fetch_brand_prices(brand):
+    if brand == 'Lotus':
+        return _fetch_lotus_prices()
+
+    source = GOLD_BRAND_SOURCES.get(brand)
+    if not source:
+        return None, {'error': 'unsupported brand', 'brand': brand}
+
+    return _fetch_api_source(source)
 
 
 def get_gold_price(brand):
