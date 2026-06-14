@@ -25,7 +25,7 @@
     <div class="stat-meta">
       <div class="stat-label">Saved So Far</div>
       <div class="stat-value">{{ "Rp{:,.0f}".format(plans.total_saved) }}</div>
-      <div class="stat-label">from <a href="/invest">Total Invested</a></div>
+      <div class="stat-label">from <a href="/invest">Current Value</a></div>
     </div>
   </div>
   <div class="stat-card">
@@ -66,7 +66,7 @@
       <label for="planTarget">Target Amount (Rp)</label>
       <input type="number" step="any" class="form-control" id="planTarget" name="target" placeholder="e.g. 35000000" required>
     </div>
-    <p class="form-hint"><i class="fas fa-link"></i> Saved progress is synced automatically from <a href="/invest">Total Invested</a> in your portfolio.</p>
+    <p class="form-hint"><i class="fas fa-link"></i> Saved progress is synced automatically from <a href="/invest">Current Value</a> in your portfolio.</p>
     <div class="form-group">
       <label for="planDate">Target Date</label>
       <input type="date" class="form-control" id="planDate" name="targetdate">
@@ -163,7 +163,7 @@
         <label for="planEditTarget">Target Amount (Rp)</label>
         <input type="number" step="any" class="form-control" id="planEditTarget" name="target" required>
       </div>
-      <p class="form-hint"><i class="fas fa-link"></i> Saved: {{ "Rp{:,.0f}".format(plans.total_invested) }} (auto from Total Invested)</p>
+      <p class="form-hint"><i class="fas fa-link"></i> Saved: {{ "Rp{:,.0f}".format(plans.total_current_value) }} (auto from Current Value)</p>
       <div class="form-group">
         <label for="planEditDate">Target Date</label>
         <input type="date" class="form-control" id="planEditDate" name="targetdate">
