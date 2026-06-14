@@ -4,12 +4,13 @@ import time
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-# Sikande brand -> Logam Mulia API source slug
+from lotus_scraper import fetch_lotus_buyback_price
+
+# Sikande brand -> Logam Mulia API source slug (Lotus uses lotus_scraper.py)
 GOLD_BRAND_SOURCES = {
     'HRTA': 'emasku',
     'Antam': 'logammulia',
     'BullionKey': 'sampoernagold',
-    'Lotus': 'hartadinataabadi',
 }
 
 # Prefer standard bullion rows when a source lists multiple product lines.
@@ -80,6 +81,10 @@ def _price_per_gram(items):
 
 
 def _fetch_brand_prices(brand):
+    if brand == 'Lotus':
+        price, info = fetch_lotus_buyback_price()
+        return price, info
+
     source = GOLD_BRAND_SOURCES.get(brand)
     if not source:
         return None, {'error': 'unsupported brand', 'brand': brand}
