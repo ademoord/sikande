@@ -1,19 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="dashboard-range-bar">
+  <span class="dashboard-range-label">Spending view</span>
+  <div class="range-toggle" role="group" aria-label="Spending time range">
+    <a href="{{ url_for('dashboard', range='month') }}"
+       class="range-toggle-btn {{ 'active' if spending_range == 'month' }}">
+      <i class="fas fa-calendar-day"></i> Current Month
+    </a>
+    <a href="{{ url_for('dashboard', range='all') }}"
+       class="range-toggle-btn {{ 'active' if spending_range == 'all' }}">
+      <i class="fas fa-infinity"></i> All Time
+    </a>
+  </div>
+  <span class="dashboard-range-meta">
+    {% if spending_range == 'month' %}
+      {{ month_label }}
+    {% elif spending.archive_from %}
+      {{ spending.archive_from.strftime('%b %Y') }} – {{ spending.archive_to.strftime('%b %Y') }}
+      {% if spending.data_source == 'archive' %}<span class="badge-cat badge-muted">archive</span>{% endif %}
+    {% else %}
+      All records in live database
+    {% endif %}
+  </span>
+</div>
+
+{% if spending.get('archive_note') %}
+<p class="form-hint" style="margin: 0 0 16px;"><i class="fas fa-info-circle"></i> {{ spending.archive_note }}</p>
+{% endif %}
+
 <div class="stat-grid">
   <div class="stat-card">
     <div class="stat-icon"><i class="fas fa-wallet"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Total Outcome</div>
-      <div class="stat-value">{{ "Rp{:,.0f}".format(totalout) }}</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(spending.totalout) }}</div>
+      <div class="stat-label">{{ spending.range_label }}</div>
     </div>
   </div>
   <div class="stat-card">
     <div class="stat-icon"><i class="fas fa-receipt"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Total Items</div>
-      <div class="stat-value">{{ item_count }}</div>
+      <div class="stat-value">{{ spending.item_count }}</div>
     </div>
   </div>
   <div class="stat-card">
@@ -32,15 +61,15 @@
   </div>
 </div>
 
-<h3 class="section-title">Insights</h3>
+<h3 class="section-title">Insights <span class="section-sub">({{ spending.range_label }})</span></h3>
 <div class="stat-grid">
   <div class="stat-card">
     <div class="stat-icon"><i class="fas fa-star"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Most Frequent Item</div>
-      {% if top_item %}
-      <div class="stat-value">{{ top_item.name }}</div>
-      <div class="stat-label">{{ top_item.count }}x &middot; {{ "Rp{:,.0f}".format(top_item.total) }}</div>
+      {% if spending.top_item %}
+      <div class="stat-value">{{ spending.top_item.name }}</div>
+      <div class="stat-label">{{ spending.top_item.count }}x &middot; {{ "Rp{:,.0f}".format(spending.top_item.total) }}</div>
       {% else %}
       <div class="stat-value">-</div>
       {% endif %}
@@ -50,9 +79,9 @@
     <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Top Category (by count)</div>
-      {% if top_cat_count %}
-      <div class="stat-value">{{ top_cat_count.name }}</div>
-      <div class="stat-label">{{ top_cat_count.count }} entries</div>
+      {% if spending.top_cat_count %}
+      <div class="stat-value">{{ spending.top_cat_count.name }}</div>
+      <div class="stat-label">{{ spending.top_cat_count.count }} entries</div>
       {% else %}
       <div class="stat-value">-</div>
       {% endif %}
@@ -62,9 +91,9 @@
     <div class="stat-icon"><i class="fas fa-coins"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Top Category (by Rp)</div>
-      {% if top_cat_rp %}
-      <div class="stat-value">{{ top_cat_rp.name }}</div>
-      <div class="stat-label">{{ "Rp{:,.0f}".format(top_cat_rp.total) }} &middot; {{ top_cat_rp.pct }}%</div>
+      {% if spending.top_cat_rp %}
+      <div class="stat-value">{{ spending.top_cat_rp.name }}</div>
+      <div class="stat-label">{{ "Rp{:,.0f}".format(spending.top_cat_rp.total) }} &middot; {{ spending.top_cat_rp.pct }}%</div>
       {% else %}
       <div class="stat-value">-</div>
       {% endif %}
@@ -74,9 +103,9 @@
     <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Largest Expense</div>
-      {% if highest_item %}
-      <div class="stat-value">{{ "Rp{:,.0f}".format(highest_item.price) }}</div>
-      <div class="stat-label">{{ highest_item.name }}</div>
+      {% if spending.highest_item %}
+      <div class="stat-value">{{ "Rp{:,.0f}".format(spending.highest_item.price) }}</div>
+      <div class="stat-label">{{ spending.highest_item.name }}</div>
       {% else %}
       <div class="stat-value">-</div>
       {% endif %}
@@ -86,19 +115,46 @@
     <div class="stat-icon"><i class="fas fa-calculator"></i></div>
     <div class="stat-meta">
       <div class="stat-label">Average per Item</div>
-      <div class="stat-value">{{ "Rp{:,.0f}".format(avg_item) }}</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(spending.avg_item) }}</div>
     </div>
   </div>
+  {% if spending_range == 'all' and hist_yoy %}
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">This Month vs Last Year</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(hist_yoy.current) }}</div>
+      <div class="stat-label">
+        {% if hist_yoy.previous %}
+        was {{ "Rp{:,.0f}".format(hist_yoy.previous) }}
+        {% if hist_yoy.pct_change is not none %}({{ "{:+.1f}".format(hist_yoy.pct_change) }}%){% endif %}
+        {% else %}No data for same month last year{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
-<div class="dashboard-grid">
+<div class="dashboard-grid{% if spending.show_monthly_chart %} dashboard-grid-3{% endif %}">
+  {% if spending.show_monthly_chart %}
+  <div class="content-card dashboard-span-2">
+    <div class="content-card-header">
+      <h2>Monthly Spending</h2>
+      <a href="/archive?group_by=month" class="btn-outline btn-sm">Details</a>
+    </div>
+    <div class="chart-container chart-container-wide">
+      <canvas id="spendingMonthlyChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="content-card">
     <div class="content-card-header">
       <h2>Spending by Category</h2>
     </div>
-    {% if category_stats %}
+    {% if spending.category_stats %}
     <div class="cat-list">
-      {% for c in category_stats %}
+      {% for c in spending.category_stats %}
       <div class="cat-row">
         <div class="cat-row-top">
           <span class="badge-cat badge-{{ c.key }}">{{ c.name }}</span>
@@ -111,7 +167,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state"><i class="fas fa-chart-pie"></i><p>No spending data yet.</p></div>
+    <div class="empty-state"><i class="fas fa-chart-pie"></i><p>No spending data for this range.</p></div>
     {% endif %}
   </div>
 
@@ -123,11 +179,30 @@
       <canvas id="doughnutChart"></canvas>
     </div>
     <p class="text-center" style="margin: 22px 0 0; color: var(--muted);">
-      Total Outcome for <b style="color: var(--text);">{{ dt.ctime()[4:7] }} {{ dt.ctime()[20:24] }}</b>
-      is <b style="color: var(--gold);">{{ "Rp{:,.2f}".format(totalout) }}</b>
+      Total for <b style="color: var(--text);">{{ spending.range_label }}</b>:
+      <b style="color: var(--gold);">{{ "Rp{:,.0f}".format(spending.totalout) }}</b>
     </p>
   </div>
 </div>
+
+{% if spending_range == 'all' and spending.get('hist_top') %}
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>Top Recurring (Canonical)</h2>
+    <a href="/archive?group_by=canonical&sort=price_desc" class="btn-outline btn-sm">View all</a>
+  </div>
+  <div class="cat-list">
+    {% for t in spending.hist_top %}
+    <div class="cat-row">
+      <div class="cat-row-top">
+        <span>{{ t.name }}</span>
+        <span class="cat-row-meta">{{ t.count }}x &middot; {{ "Rp{:,.0f}".format(t.total) }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 {% if plans_summary and plans_summary.goals %}
 <h3 class="section-title">Goals</h3>
@@ -257,5 +332,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  window.SIKANDE_DASHBOARD_RANGE = {{ spending_range|tojson }};
+</script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-archive"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Archive Records</div>
+      <div class="stat-value">{{ stats.total_rows if stats else 0 }}</div>
+      <div class="stat-label">{{ dump_count }} SQL dump(s) in {{ dumps_dir }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Historical Total</div>
+      <div class="stat-value">{{ "Rp{:,.0f}".format(stats.total_amount) if stats else "Rp0" }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-tags"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Distinct Names</div>
+      <div class="stat-value">{{ stats.distinct_names if stats else 0 }}</div>
+      <div class="stat-label">{{ stats.distinct_canonical if stats else 0 }} canonical groups</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+    <div class="stat-meta">
+      <div class="stat-label">Date Range</div>
+      {% if stats and stats.first_ts %}
+      <div class="stat-value" style="font-size:0.95rem;">{{ stats.first_ts.strftime('%b %Y') }} – {{ stats.last_ts.strftime('%b %Y') }}</div>
+      {% else %}
+      <div class="stat-value">—</div>
+      {% endif %}
+      {% if last_ingest %}
+      <div class="stat-label">Last ingest: {{ last_ingest.finished_at.strftime('%Y-%m-%d %H:%M') if last_ingest.finished_at else 'running' }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>Historical Expense Archive</h2>
+    <div class="header-actions">
+      <a href="/archive/aliases" class="btn-outline btn-sm"><i class="fas fa-link"></i> Aliases</a>
+      <form method="POST" action="/archive/ingest" style="display:inline;">
+        <input type="hidden" name="rebuild" value="0">
+        <button type="submit" class="btn-outline btn-sm"><i class="fas fa-sync-alt"></i> Sync</button>
+      </form>
+      <form method="POST" action="/archive/ingest" style="display:inline;"
+            onsubmit="return confirm('Rebuild clears archive rows and re-imports all SQL dumps. Aliases are kept. Continue?');">
+        <input type="hidden" name="rebuild" value="1">
+        <button type="submit" class="btn-gold btn-sm"><i class="fas fa-database"></i> Rebuild</button>
+      </form>
+    </div>
+  </div>
+
+  {% if not stats %}
+  <div class="empty-state">
+    <i class="fas fa-database"></i>
+    <p>No archive data yet. Place <code>sikande*.sql</code> files in <code>{{ dumps_dir }}</code> and click Rebuild.</p>
+  </div>
+  {% else %}
+
+  <form method="GET" action="/archive" class="archive-filters">
+    <div class="filter-row">
+      <div class="form-group filter-search">
+        <label for="q">Search</label>
+        <input type="search" class="form-control" id="q" name="q" value="{{ params.q }}"
+               placeholder="Item name, canonical name…">
+      </div>
+      <div class="form-group">
+        <label for="date_from">From</label>
+        <input type="date" class="form-control" id="date_from" name="date_from"
+               value="{{ request.args.get('date_from', '') }}">
+      </div>
+      <div class="form-group">
+        <label for="date_to">To</label>
+        <input type="date" class="form-control" id="date_to" name="date_to"
+               value="{{ request.args.get('date_to', '') }}">
+      </div>
+      <div class="form-group">
+        <label for="category">Category</label>
+        <select class="form-control" id="category" name="category">
+          <option value="">All</option>
+          <option value="legacy" {% if params.category == 'legacy' %}selected{% endif %}>Legacy (no category)</option>
+          {% for key, name in category_mapping.items() %}
+          <option value="{{ key }}" {% if params.category == key %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="form-group">
+        <label for="price_min">Min Rp</label>
+        <input type="number" class="form-control" id="price_min" name="price_min"
+               value="{{ params.price_min or '' }}" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label for="price_max">Max Rp</label>
+        <input type="number" class="form-control" id="price_max" name="price_max"
+               value="{{ params.price_max or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="group_by">Group by</label>
+        <select class="form-control" id="group_by" name="group_by">
+          <option value="none" {% if params.group_by == 'none' %}selected{% endif %}>Detail rows</option>
+          <option value="month" {% if params.group_by == 'month' %}selected{% endif %}>Month</option>
+          <option value="category" {% if params.group_by == 'category' %}selected{% endif %}>Category</option>
+          <option value="name" {% if params.group_by == 'name' %}selected{% endif %}>Raw item name</option>
+          <option value="canonical" {% if params.group_by == 'canonical' %}selected{% endif %}>Canonical name</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="sort">Sort</label>
+        <select class="form-control" id="sort" name="sort">
+          <option value="date_desc" {% if params.sort == 'date_desc' %}selected{% endif %}>Newest first</option>
+          <option value="date_asc" {% if params.sort == 'date_asc' %}selected{% endif %}>Oldest first</option>
+          <option value="price_desc" {% if params.sort == 'price_desc' %}selected{% endif %}>Highest amount</option>
+          <option value="price_asc" {% if params.sort == 'price_asc' %}selected{% endif %}>Lowest amount</option>
+          <option value="name_asc" {% if params.sort == 'name_asc' %}selected{% endif %}>Name A–Z</option>
+        </select>
+      </div>
+      <div class="form-group filter-actions">
+        <label>&nbsp;</label>
+        <button type="submit" class="btn-gold"><i class="fas fa-filter"></i> Apply</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="archive-summary-bar">
+    <span><strong>{{ result.total_rows }}</strong> {{ 'groups' if result.mode == 'grouped' else 'rows' }} matched</span>
+    <span>Filtered total: <strong class="text-gold">{{ "Rp{:,.0f}".format(result.filtered_total) }}</strong></span>
+  </div>
+
+  <div class="table-responsive">
+    {% if result.mode == 'grouped' %}
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>{% if params.group_by == 'month' %}Month{% elif params.group_by == 'category' %}Category{% else %}Name{% endif %}</th>
+          <th>Count</th>
+          <th>Total</th>
+          <th>First</th>
+          <th>Last</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in result.rows %}
+        <tr>
+          <td>
+            {% if params.group_by == 'category' %}
+              {% if row.label == 'legacy' %}Legacy{% else %}{{ category_mapping.get(row.label, row.label) }}{% endif %}
+            {% else %}
+              {{ row.label }}
+            {% endif %}
+          </td>
+          <td>{{ row.count }}</td>
+          <td>{{ "Rp{:,.0f}".format(row.total) }}</td>
+          <td>{{ row.first_seen.strftime('%Y-%m-%d') if row.first_seen else '—' }}</td>
+          <td>{{ row.last_seen.strftime('%Y-%m-%d') if row.last_seen else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Item</th>
+          <th>Canonical</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in result.rows %}
+        <tr>
+          <td>{{ row.itemTimestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ row.itemName }}</td>
+          <td>
+            {{ row.canonical_name }}
+            {% if row.canonical_name != row.itemName %}
+            <span class="badge-cat badge-muted" title="Grouped label">grp</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.category %}
+            <span class="badge-cat badge-{{ row.category }}">{{ category_mapping.get(row.category, row.category) }}</span>
+            {% else %}
+            <span class="badge-cat badge-muted">legacy</span>
+            {% endif %}
+          </td>
+          <td>{{ "Rp{:,.0f}".format(row.itemPrice) }}</td>
+          <td class="text-muted">{{ row.source_file or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  {% if result.pages > 1 %}
+  <nav class="archive-pagination">
+    {% if result.page > 1 %}
+    <a class="btn-outline btn-sm" href="{{ url_for('archive', page=result.page - 1, **link_params) }}">&laquo; Prev</a>
+    {% endif %}
+    <span>Page {{ result.page }} / {{ result.pages }}</span>
+    {% if result.page < result.pages %}
+    <a class="btn-outline btn-sm" href="{{ url_for('archive', page=result.page + 1, **link_params) }}">Next &raquo;</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% endif %}
+</div>
+{% endblock %}

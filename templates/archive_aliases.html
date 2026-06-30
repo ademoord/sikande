@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="content-card" style="max-width: 900px;">
+  <div class="content-card-header">
+    <h2>Item Name Aliases</h2>
+    <a href="/archive" class="btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Back to Archive</a>
+  </div>
+  <p style="color: var(--muted); margin-top: -6px;">
+    Map messy raw names to a canonical label for grouping (e.g. "Nasgor" → "Nasi Goreng").
+    Pattern rules already handle common cases; add aliases for the rest.
+  </p>
+
+  <form method="POST" action="/archive/aliases" class="alias-form">
+    <div class="filter-row">
+      <div class="form-group">
+        <label for="raw_name">Raw name (as entered)</label>
+        <input type="text" class="form-control" id="raw_name" name="raw_name" list="rawNameList"
+               placeholder="e.g. Nasgor" required>
+        <datalist id="rawNameList">
+          {% for name in raw_names %}
+          <option value="{{ name }}">
+          {% endfor %}
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label for="canonical_name">Canonical name</label>
+        <input type="text" class="form-control" id="canonical_name" name="canonical_name"
+               placeholder="e.g. Nasi Goreng" required>
+      </div>
+      <div class="form-group filter-actions">
+        <label>&nbsp;</label>
+        <button type="submit" class="btn-gold"><i class="fas fa-save"></i> Save Alias</button>
+      </div>
+    </div>
+  </form>
+
+  <form method="GET" action="/archive/aliases" class="alias-suggest-form">
+    <div class="filter-row">
+      <div class="form-group filter-search">
+        <label for="suggest">Fuzzy suggestions</label>
+        <input type="search" class="form-control" id="suggest" name="suggest"
+               value="{{ suggest_q }}" placeholder="Type to find similar names…">
+      </div>
+      <div class="form-group filter-actions">
+        <label>&nbsp;</label>
+        <button type="submit" class="btn-outline"><i class="fas fa-search"></i> Find Similar</button>
+      </div>
+    </div>
+  </form>
+
+  {% if suggestions %}
+  <div class="suggestion-chips">
+    <span class="stat-label">Similar names:</span>
+    {% for s in suggestions %}
+    <button type="button" class="chip-btn" onclick="document.getElementById('raw_name').value='{{ s|e }}'">{{ s }}</button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="content-card">
+  <div class="content-card-header">
+    <h2>Saved Aliases ({{ aliases|length }})</h2>
+  </div>
+  {% if aliases %}
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Raw name</th>
+          <th>Canonical</th>
+          <th>Added</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in aliases %}
+        <tr>
+          <td>{{ a.raw_name }}</td>
+          <td>{{ a.canonical_name }}</td>
+          <td>{{ a.created_at.strftime('%Y-%m-%d') if a.created_at else '—' }}</td>
+          <td>
+            <form method="POST" action="/archive/aliases/delete/{{ a.id }}" style="display:inline;"
+                  onsubmit="return confirm('Remove this alias?');">
+              <button type="submit" class="btn-outline btn-sm"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="fas fa-link"></i><p>No aliases yet. Pattern rules still apply automatically.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

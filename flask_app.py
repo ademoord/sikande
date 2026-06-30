@@ -12,6 +12,17 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from config import app, db, login_manager
 from models import Item, Debt, User, Investment, Plan
+import archive_models  # noqa: F401 — register archive bind models
+from archive_models import ArchiveItem, ItemAlias, IngestRun
+from archive_paths import list_sql_dumps, sql_dumps_dir, archive_db_path
+from archive_query import (
+    ALLOWED_GROUP_BY, ALLOWED_SORT, archive_stats, category_breakdown,
+    distinct_raw_names, fuzzy_name_suggestions, monthly_totals,
+    query_grouped_rows, top_recurring, yoy_comparison,
+)
+from archive_ingest import refresh_canonical_names, run_ingest
+from archive_normalize import normalize_name
+from dashboard_spending import chart_doughnut_data, chart_monthly_totals, get_spending_context, parse_range
 import os
 import subprocess
 
@@ -20,6 +31,12 @@ import subprocess
 # like `investment` on a production MySQL reload without a manual migration.
 with app.app_context():
     db.create_all()
+    if app.config.get('LOCAL_DEV') and ArchiveItem.query.count() == 0:
+        try:
+            if list_sql_dumps(app.config):
+                run_ingest(rebuild=True)
+        except Exception:
+            db.session.rollback()
 
 # When running locally (no production config.txt), build and seed a local
 # SQLite database with placeholder data. This is a no-op in production.
@@ -158,73 +175,30 @@ def dashboard():
     title = "Dashboard"
     db.session.rollback()
 
-    totalout = helpers.dbsumint(Item.itemPrice)
-    item_count = Item.query.count()
+    spending_range = parse_range(request.args.get('range'))
+    spending = get_spending_context(spending_range, CATEGORY_MAPPING, CATEGORY_COLORS)
+
     debt_count = Debt.query.count()
     total_debt = helpers.dbsumint(Debt.debtTotal)
-    avg_item = round(totalout / item_count) if item_count else 0
-
-    # Totals + counts per category
-    cat_rows = db.session.query(
-        Item.category,
-        db.func.count(Item.itemID),
-        db.func.coalesce(db.func.sum(Item.itemPrice), 0)
-    ).group_by(Item.category).all()
-
-    category_stats = []
-    for cat, cnt, total in cat_rows:
-        total = int(total or 0)
-        category_stats.append({
-            'key': cat,
-            'name': CATEGORY_MAPPING.get(cat, cat),
-            'color': CATEGORY_COLORS.get(cat, '#c9a227'),
-            'count': cnt,
-            'total': total,
-            'pct': round(total / totalout * 100) if totalout else 0,
-        })
-    category_stats.sort(key=lambda c: c['total'], reverse=True)
-
-    # Which category holds the most Rp / most count
-    top_cat_rp = category_stats[0] if category_stats else None
-    top_cat_count = max(category_stats, key=lambda c: c['count']) if category_stats else None
-
-    # Most frequently inputted item (by number of entries)
-    freq_row = db.session.query(
-        Item.itemName,
-        db.func.count(Item.itemID),
-        db.func.coalesce(db.func.sum(Item.itemPrice), 0)
-    ).group_by(Item.itemName).order_by(db.func.count(Item.itemID).desc()).first()
-    top_item = None
-    if freq_row:
-        top_item = {'name': freq_row[0], 'count': freq_row[1], 'total': int(freq_row[2] or 0)}
-
-    # Single largest expense
-    hi = Item.query.order_by(Item.itemPrice.desc()).first()
-    highest_item = None
-    if hi:
-        highest_item = {
-            'name': hi.itemName,
-            'price': hi.itemPrice,
-            'category': CATEGORY_MAPPING.get(hi.category, hi.category),
-        }
 
     portfolio = compute_portfolio()
     plans_summary = compute_plans()
+    hist_yoy = yoy_comparison() if archive_stats() else None
+
+    now = datetime.now()
+    month_label = now.strftime('%B %Y')
 
     return render_template('dashboard.html',
                             title=title,
-                            totalout=totalout,
-                            item_count=item_count,
+                            spending=spending,
+                            spending_range=spending_range,
+                            month_label=month_label,
                             debt_count=debt_count,
                             total_debt=total_debt,
-                            avg_item=avg_item,
-                            category_stats=category_stats,
-                            top_cat_rp=top_cat_rp,
-                            top_cat_count=top_cat_count,
-                            top_item=top_item,
-                            highest_item=highest_item,
                             portfolio=portfolio,
                             plans_summary=plans_summary,
+                            hist_yoy=hist_yoy,
+                            category_mapping=CATEGORY_MAPPING,
                             dt=dtCurrent)
 
 # Index view
@@ -286,7 +260,7 @@ def reports():
         'urgent': 'Keperluan Darurat'
     }
 
-    title = "Reports"
+    title = "Purchases"
     try:
         if request.method == 'POST':
             # Process the POST request and save the data
@@ -693,10 +667,17 @@ def settings():
     antam_rows = Investment.query.filter_by(invType='gold', asset='Antam').all()
     antam_count = len(antam_rows)
     antam_price = antam_rows[0].currentPrice if antam_rows else None
+    last_ingest = IngestRun.query.order_by(IngestRun.started_at.desc()).first()
+    dump_count = len(list_sql_dumps(app.config))
+    archive_stat = archive_stats()
     return render_template('settings.html',
                             title=title,
                             antam_count=antam_count,
-                            antam_price=antam_price)
+                            antam_price=antam_price,
+                            last_ingest=last_ingest,
+                            dump_count=dump_count,
+                            archive_stat=archive_stat,
+                            dumps_dir=sql_dumps_dir(app.config))
 
 
 @app.route('/settings/antam_price', methods=['POST'])
@@ -713,6 +694,168 @@ def settings_antam_price():
         db.session.rollback()
         flash('Failed to update Antam price.', 'error')
     return redirect(url_for('settings'))
+
+
+def _parse_archive_filters():
+    """Parse common archive query params from request."""
+    q = (request.args.get('q') or '').strip()
+    group_by = request.args.get('group_by', 'none')
+    if group_by not in ALLOWED_GROUP_BY:
+        group_by = 'none'
+    sort = request.args.get('sort', 'date_desc')
+    if sort not in ALLOWED_SORT:
+        sort = 'date_desc'
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(200, max(10, request.args.get('per_page', 50, type=int)))
+
+    date_from = _parse_date(request.args.get('date_from'))
+    date_to = _parse_date(request.args.get('date_to'))
+    category = (request.args.get('category') or '').strip() or None
+    price_min = request.args.get('price_min', type=int)
+    price_max = request.args.get('price_max', type=int)
+    return {
+        'q': q, 'group_by': group_by, 'sort': sort, 'page': page, 'per_page': per_page,
+        'date_from': date_from, 'date_to': date_to, 'category': category,
+        'price_min': price_min, 'price_max': price_max,
+    }
+
+
+@app.route('/archive')
+@login_required
+def archive():
+    title = 'Archive'
+    params = _parse_archive_filters()
+    stats = archive_stats()
+    last_ingest = IngestRun.query.order_by(IngestRun.started_at.desc()).first()
+    dump_count = len(list_sql_dumps(app.config))
+
+    if stats:
+        result = query_grouped_rows(**params)
+    else:
+        result = {
+            'mode': 'detail', 'rows': [], 'total_rows': 0, 'page': 1,
+            'per_page': params['per_page'], 'pages': 1, 'filtered_total': 0, 'page_total': 0,
+        }
+
+    link_params = {}
+    for key in ('q', 'date_from', 'date_to', 'category', 'price_min', 'price_max',
+                'group_by', 'sort', 'per_page'):
+        val = request.args.get(key)
+        if val:
+            link_params[key] = val
+
+    return render_template(
+        'archive.html',
+        title=title,
+        result=result,
+        stats=stats,
+        params=params,
+        link_params=link_params,
+        last_ingest=last_ingest,
+        dump_count=dump_count,
+        category_mapping=CATEGORY_MAPPING,
+        dumps_dir=sql_dumps_dir(app.config),
+        archive_path=archive_db_path(app.config),
+    )
+
+
+@app.route('/archive/ingest', methods=['POST'])
+@login_required
+def archive_ingest_route():
+    rebuild = request.form.get('rebuild') == '1'
+    try:
+        run = run_ingest(rebuild=rebuild)
+        flash('Archive updated: {} new rows, {} duplicates skipped ({} files).'.format(
+            run.rows_inserted, run.rows_skipped, run.files_processed))
+    except Exception as exc:
+        flash('Archive ingest failed: {}'.format(exc), 'error')
+    return redirect(url_for('archive'))
+
+
+@app.route('/archive/aliases', methods=['GET', 'POST'])
+@login_required
+def archive_aliases():
+    title = 'Item Aliases'
+    if request.method == 'POST':
+        raw_name = (request.form.get('raw_name') or '').strip()
+        canonical_name = (request.form.get('canonical_name') or '').strip()
+        if raw_name and canonical_name:
+            normalized = normalize_name(raw_name)
+            existing = ItemAlias.query.filter_by(normalized_raw=normalized).first()
+            if existing:
+                existing.raw_name = raw_name[:64]
+                existing.canonical_name = canonical_name[:64]
+            else:
+                db.session.add(ItemAlias(
+                    raw_name=raw_name[:64],
+                    normalized_raw=normalized,
+                    canonical_name=canonical_name[:64],
+                ))
+            db.session.commit()
+            refresh_canonical_names()
+            flash('Alias saved: "{}" → "{}"'.format(raw_name, canonical_name))
+        else:
+            flash('Both raw name and canonical name are required.', 'error')
+        return redirect(url_for('archive_aliases'))
+
+    aliases = ItemAlias.query.order_by(ItemAlias.canonical_name, ItemAlias.raw_name).all()
+    suggest_q = (request.args.get('suggest') or '').strip()
+    suggestions = fuzzy_name_suggestions(suggest_q) if suggest_q else []
+    raw_names = distinct_raw_names(prefix=suggest_q, limit=40)
+    return render_template(
+        'archive_aliases.html',
+        title=title,
+        aliases=aliases,
+        suggestions=suggestions,
+        raw_names=raw_names,
+        suggest_q=suggest_q,
+    )
+
+
+@app.route('/archive/aliases/delete/<int:alias_id>', methods=['POST'])
+@login_required
+def archive_alias_delete(alias_id):
+    alias = ItemAlias.query.get(alias_id)
+    if alias:
+        db.session.delete(alias)
+        db.session.commit()
+        refresh_canonical_names()
+        flash('Alias removed.')
+    return redirect(url_for('archive_aliases'))
+
+
+@app.route('/api/archive_monthly_totals')
+@login_required
+def archive_monthly_totals_api():
+    if not archive_stats():
+        return jsonify({'labels': [], 'totals': [], 'counts': []})
+    rows = monthly_totals(limit_months=24)
+    return jsonify({
+        'labels': [r['month'] for r in rows],
+        'totals': [r['total'] for r in rows],
+        'counts': [r['count'] for r in rows],
+    })
+
+
+@app.route('/api/archive_category_breakdown')
+@login_required
+def archive_category_breakdown_api():
+    if not archive_stats():
+        return jsonify({'categories': [], 'totals': [], 'counts': []})
+    rows = category_breakdown()
+    return jsonify({
+        'categories': [r['category'] for r in rows],
+        'totals': [r['total'] for r in rows],
+        'counts': [r['count'] for r in rows],
+    })
+
+
+@app.route('/api/archive_fuzzy_suggest')
+@login_required
+def archive_fuzzy_suggest_api():
+    q = (request.args.get('q') or '').strip()
+    return jsonify({'suggestions': fuzzy_name_suggestions(q)})
+
 
 @app.route('/api/bar_chart_data')
 def bar_chart_data():
@@ -739,17 +882,15 @@ def bar_chart_data():
 @app.route('/api/doughnut_chart_data')
 @login_required
 def doughnut_chart_data():
-    data = db.session.query(
-        Item.category, db.func.count(Item.category)
-    ).group_by(Item.category).all()
+    range_mode = parse_range(request.args.get('range'))
+    return jsonify(chart_doughnut_data(range_mode))
 
-    categories = [row[0] for row in data]
-    counts = [row[1] for row in data]
 
-    return {
-        'categories': categories,
-        'counts': counts
-    }
+@app.route('/api/spending_monthly_chart')
+@login_required
+def spending_monthly_chart_api():
+    range_mode = parse_range(request.args.get('range'))
+    return jsonify(chart_monthly_totals(range_mode))
 
 @app.route('/api/investment_chart_data')
 @login_required

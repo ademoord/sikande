@@ -4,6 +4,8 @@ from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
+from archive_paths import archive_db_path
+
 app = Flask(__name__)
 
 # Determine the user's home directory
@@ -35,6 +37,11 @@ else:
     app.config['SECRET_KEY'] = 'local-dev-secret-key'
     app.config['GOLD_API_BASE_URL'] = os.environ.get(
         'GOLD_API_BASE_URL', 'https://logam-mulia-api.iamutaki.workers.dev')
+
+# Historical expense archive (separate SQLite; SQL dumps merged from ../Data/)
+_archive_path = archive_db_path(app.config)
+app.config.setdefault('SQLALCHEMY_BINDS', {})
+app.config['SQLALCHEMY_BINDS']['archive'] = 'sqlite:///' + _archive_path
 
 login_manager = LoginManager(app)
 

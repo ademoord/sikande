@@ -43,7 +43,42 @@
 
 <div class="content-card" style="max-width: 720px;">
   <div class="content-card-header">
-    <h2>Settings</h2>
+    <h2>Historical Archive</h2>
+  </div>
+  <p style="color: var(--muted); margin-top: -6px;">
+    Merge SQL backups from <code>{{ dumps_dir }}</code> into a searchable archive database.
+  </p>
+  {% if archive_stat %}
+  <p class="form-hint" style="margin-top: 12px;">
+    <i class="fas fa-archive"></i> {{ archive_stat.total_rows }} records &middot;
+    {{ "Rp{:,.0f}".format(archive_stat.total_amount) }} total &middot;
+    {{ dump_count }} dump file(s)
+    {% if last_ingest and last_ingest.finished_at %}
+    &middot; Last sync {{ last_ingest.finished_at.strftime('%Y-%m-%d %H:%M') }}
+    {% endif %}
+  </p>
+  {% else %}
+  <p class="form-hint" style="margin-top: 12px;">
+    <i class="fas fa-info-circle"></i> No archive built yet. Found {{ dump_count }} SQL file(s).
+  </p>
+  {% endif %}
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 18px;">
+    <a href="/archive" class="btn-gold"><i class="fas fa-search"></i> Open Archive</a>
+    <form method="POST" action="/archive/ingest">
+      <input type="hidden" name="rebuild" value="0">
+      <button type="submit" class="btn-outline"><i class="fas fa-sync-alt"></i> Sync New Dumps</button>
+    </form>
+    <form method="POST" action="/archive/ingest"
+          onsubmit="return confirm('Rebuild re-imports all dumps from scratch. Continue?');">
+      <input type="hidden" name="rebuild" value="1">
+      <button type="submit" class="btn-outline"><i class="fas fa-database"></i> Full Rebuild</button>
+    </form>
+  </div>
+</div>
+
+<div class="content-card" style="max-width: 720px;">
+  <div class="content-card-header">
+    <h2>Database Maintenance</h2>
   </div>
   <p style="color: var(--muted); margin-top: -6px;">Backup or maintain your database.</p>
 

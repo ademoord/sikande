@@ -6,13 +6,16 @@
     <i class="fas fa-plus-circle"></i> Input
   </a>
   <a href="/reports" class="{{ 'active' if request.path == '/reports' }}">
-    <i class="fas fa-file-invoice-dollar"></i> Reports
+    <i class="fas fa-file-invoice-dollar"></i> Purchases
   </a>
   <a href="/debts" class="{{ 'active' if request.path == '/debts' }}">
     <i class="fas fa-hand-holding-usd"></i> Debts
   </a>
   <a href="/plans" class="{{ 'active' if request.path == '/plans' }}">
     <i class="fas fa-bullseye"></i> Plans
+  </a>
+  <a href="/archive" class="{{ 'active' if request.path.startswith('/archive') }}">
+    <i class="fas fa-archive"></i> Archive
   </a>
   <a href="/invest" class="{{ 'active' if request.path == '/invest' }}">
     <i class="fas fa-chart-line"></i> Invest

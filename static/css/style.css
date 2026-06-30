@@ -559,6 +559,7 @@ h1, h2, h3, h4, h5, h6 {
 .badge-charity      { background: rgba(60, 179, 113, 0.18);  color: #34a877; }
 .badge-fun          { background: rgba(255, 160, 122, 0.22); color: #d9744a; }
 .badge-urgent       { background: rgba(205, 92, 92, 0.18);   color: #cd5c5c; }
+.badge-legacy       { background: rgba(138, 129, 112, 0.18); color: #8a8170; }
 
 /* Investment type badges */
 .badge-inv-gold     { background: rgba(218, 165, 32, 0.20);  color: #b8860b; }
@@ -1378,5 +1379,206 @@ select.form-control {
 
   .chart-container {
     height: 260px;
+  }
+}
+
+/* ---------- Archive reporting ---------- */
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.archive-filters {
+  margin-bottom: 18px;
+  padding: 16px;
+  background: var(--card-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-search {
+  grid-column: span 2;
+}
+
+.filter-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.archive-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 10px 0 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.archive-summary-bar strong {
+  color: var(--text);
+}
+
+.text-gold {
+  color: var(--gold) !important;
+}
+
+.archive-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.badge-muted {
+  background: var(--bg-alt);
+  color: var(--muted);
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 4px;
+}
+
+.chart-container-wide {
+  height: 320px;
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.chip-btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.chip-btn:hover {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.alias-form,
+.alias-suggest-form {
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .filter-search {
+    grid-column: span 1;
+  }
+}
+
+/* ---------- Dashboard range selector ---------- */
+.dashboard-range-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-range-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-range-meta {
+  margin-left: auto;
+  font-size: 0.88rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-toggle {
+  display: inline-flex;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+
+.range-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.range-toggle-btn:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.range-toggle-btn.active {
+  background: var(--gold-soft);
+  color: var(--gold);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-sub {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.dashboard-grid-3 {
+  grid-template-columns: 2fr 1fr;
+}
+
+.dashboard-span-2 {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .dashboard-range-meta {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .dashboard-grid-3 {
+    grid-template-columns: 1fr;
   }
 }
