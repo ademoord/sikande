@@ -265,9 +265,13 @@
     return document.getElementById('invType').value === 'currency';
   }
 
+  function isManualGoldBrand(brand) {
+    return brand === 'Other' || brand === 'Antam';
+  }
+
   function isGoldLiveType() {
     return document.getElementById('invType').value === 'gold'
-      && document.getElementById('assetGold').value !== 'Other';
+      && !isManualGoldBrand(document.getElementById('assetGold').value);
   }
 
   function isLivePriceType() {
@@ -339,7 +343,8 @@
   function openInvEdit(btn) {
     var invType = btn.getAttribute('data-type');
     var asset = btn.getAttribute('data-asset');
-    var isLive = invType === 'currency' || (invType === 'gold' && asset !== 'Other');
+    var isLive = invType === 'currency'
+      || (invType === 'gold' && !isManualGoldBrand(asset));
     document.getElementById('invEditForm').action = '/invest/edit/' + btn.getAttribute('data-id');
     document.getElementById('invEditAsset').value = asset;
     document.getElementById('invEditQty').value = btn.getAttribute('data-quantity');

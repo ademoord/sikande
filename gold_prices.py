@@ -17,6 +17,13 @@ GOLD_BRAND_SOURCES = {
 ANTAM_API_FALLBACK = 'logammulia'
 LOTUS_API_FALLBACK = 'hartadinataabadi'
 
+# Brands that use manually entered current price (no live fetch).
+MANUAL_GOLD_BRANDS = ('Antam', 'Other')
+
+
+def is_manual_gold_brand(brand):
+    return (brand or '').strip() in MANUAL_GOLD_BRANDS
+
 # Prefer standard bullion rows when a source lists multiple product lines.
 PREFERRED_GOLD_TYPES = ('Emas Batangan',)
 
@@ -151,8 +158,8 @@ def _fetch_brand_prices(brand):
 def get_gold_price(brand):
     """Return (price_per_gram_idr, meta) for a supported gold brand."""
     brand = (brand or '').strip()
-    if not brand or brand == 'Other':
-        return None, {'error': 'unsupported', 'brand': brand}
+    if not brand or brand == 'Other' or is_manual_gold_brand(brand):
+        return None, {'error': 'manual', 'brand': brand}
 
     now = time.time()
     cached = _cache.get(brand)

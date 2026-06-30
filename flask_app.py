@@ -136,11 +136,13 @@ def _investment_form_asset(inv_type, form):
 
 
 def _investment_current_price(inv_type, asset, form):
-    """Resolve current price; currency and gold use live market rates."""
+    """Resolve current price; live rates for supported brands, manual for Antam/Other gold."""
     if inv_type == 'currency':
         rate, _ = exchange_rates.resolve_currency_price(asset, form.get('currentprice'))
         return rate
     if inv_type == 'gold':
+        if gold_prices.is_manual_gold_brand(asset):
+            return float(form['currentprice'])
         rate, _ = gold_prices.resolve_gold_price(asset, form.get('currentprice'))
         return rate
     return float(form['currentprice'])
@@ -549,7 +551,7 @@ def compute_portfolio():
             is_live_rate = not rate_meta.get('fallback') and not rate_meta.get('error')
             if inv.asset:
                 live_rates[inv.asset.upper()] = rate_meta
-        elif inv.invType == 'gold' and inv.asset and inv.asset != 'Other':
+        elif inv.invType == 'gold' and inv.asset and not gold_prices.is_manual_gold_brand(inv.asset):
             current_price, rate_meta = gold_prices.resolve_gold_price(
                 inv.asset, inv.currentPrice)
             is_live_rate = not rate_meta.get('fallback') and not rate_meta.get('error')
@@ -685,10 +687,32 @@ def delete_investment(invID):
 
 # Settings view
 @app.route('/settings', methods=['GET', 'POST'])
+@login_required
 def settings():
     title = "Settings"
+    antam_rows = Investment.query.filter_by(invType='gold', asset='Antam').all()
+    antam_count = len(antam_rows)
+    antam_price = antam_rows[0].currentPrice if antam_rows else None
     return render_template('settings.html',
-                            title=title)
+                            title=title,
+                            antam_count=antam_count,
+                            antam_price=antam_price)
+
+
+@app.route('/settings/antam_price', methods=['POST'])
+@login_required
+def settings_antam_price():
+    try:
+        price = float(request.form['antam_price'])
+        rows = Investment.query.filter_by(invType='gold', asset='Antam').all()
+        for inv in rows:
+            inv.currentPrice = price
+        db.session.commit()
+        flash('Updated current price for {} Antam holding(s)'.format(len(rows)))
+    except Exception:
+        db.session.rollback()
+        flash('Failed to update Antam price.', 'error')
+    return redirect(url_for('settings'))
 
 @app.route('/api/bar_chart_data')
 def bar_chart_data():
