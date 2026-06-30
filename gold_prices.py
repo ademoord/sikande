@@ -4,16 +4,17 @@ import time
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+from antam_scraper import fetch_antam_buyback_price
 from lotus_scraper import fetch_lotus_buyback_price
 
-# Sikande brand -> Logam Mulia API source slug
+# Sikande brand -> Logam Mulia API source slug (Antam/Lotus use scrapers)
 GOLD_BRAND_SOURCES = {
     'HRTA': 'emasku',
-    'Antam': 'logammulia',
     'BullionKey': 'sampoernagold',
 }
 
-# When lotusarchi.com is blocked (e.g. PythonAnywhere), fall back to this API source.
+# When scrapers are blocked (e.g. PythonAnywhere), fall back to Logam API sources.
+ANTAM_API_FALLBACK = 'logammulia'
 LOTUS_API_FALLBACK = 'hartadinataabadi'
 
 # Prefer standard bullion rows when a source lists multiple product lines.
@@ -120,7 +121,23 @@ def _fetch_lotus_prices():
         return price, info
 
 
+def _fetch_antam_prices():
+    """Scrape muamalahemas.com; fall back to Logam API when outbound scrape is blocked."""
+    try:
+        price, info = fetch_antam_buyback_price()
+        return price, info
+    except (URLError, ValueError, OSError) as exc:
+        price, info = _fetch_api_source(ANTAM_API_FALLBACK)
+        info = dict(info)
+        info['source'] = 'logammulia (Antam fallback)'
+        info['scrape_fallback'] = True
+        info['scrape_error'] = str(exc)
+        return price, info
+
+
 def _fetch_brand_prices(brand):
+    if brand == 'Antam':
+        return _fetch_antam_prices()
     if brand == 'Lotus':
         return _fetch_lotus_prices()
 
