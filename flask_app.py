@@ -10,6 +10,7 @@ import exchange_rates
 import gold_prices
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
+from sqlalchemy.exc import OperationalError
 from config import app, db, login_manager
 from models import Item, Debt, User, Investment, Plan
 import archive_models  # noqa: F401 — register archive bind models
@@ -170,7 +171,11 @@ def _investment_current_price(inv_type, asset, form):
 # User loader view
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except OperationalError:
+        db.session.rollback()
+        return User.query.get(int(user_id))
 
 # Dashboard view
 @app.route('/dashboard')

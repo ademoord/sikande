@@ -28,7 +28,19 @@
         <p class="error-hint">{{ hint }}</p>
 
         <div class="error-trace-box">
-          <div class="error-trace-title"><i class="fas fa-stethoscope"></i> Technical details</div>
+          <div class="error-trace-header">
+            <div class="error-trace-title"><i class="fas fa-stethoscope"></i> Technical details</div>
+            <button type="button" class="btn-outline btn-sm error-copy-btn" id="copyErrorTrace" title="Copy to clipboard">
+              <i class="fas fa-copy"></i> <span>Copy</span>
+            </button>
+          </div>
+          <textarea id="errorTraceCopy" class="error-trace-copy-source" readonly aria-hidden="true">{% if code %}{{ code }} {{ title }}
+{% endif %}Time: {{ timestamp }}
+Request: {{ method }} {{ path }}{% if query %}?{{ query }}{% endif %}
+{% if exc_type %}Exception: {{ exc_type }}
+{% endif %}{% if message %}Message: {{ message }}
+{% endif %}{% if trace %}
+{{ trace }}{% endif %}</textarea>
           <dl class="error-trace-meta">
             <div><dt>Time</dt><dd>{{ timestamp }}</dd></div>
             <div><dt>Request</dt><dd>{{ method }} {{ path }}{% if query %}?{{ query }}{% endif %}</dd></div>
@@ -54,10 +66,44 @@
           </button>
         </div>
       </div>
-      <p class="error-footer-note">Sikande error tracer &middot; screenshot this page if the issue keeps happening</p>
+      <p class="error-footer-note">Sikande error tracer &middot; use Copy to paste details into a message</p>
     </div>
     <script>
       (function () {
+        var copyBtn = document.getElementById('copyErrorTrace');
+        var copySource = document.getElementById('errorTraceCopy');
+        if (copyBtn && copySource) {
+          copyBtn.addEventListener('click', function () {
+            var text = copySource.value;
+            var label = copyBtn.querySelector('span');
+            function showCopied() {
+              copyBtn.classList.add('copied');
+              if (label) label.textContent = 'Copied!';
+              setTimeout(function () {
+                copyBtn.classList.remove('copied');
+                if (label) label.textContent = 'Copy';
+              }, 2000);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(showCopied).catch(function () {
+                copySource.focus();
+                copySource.select();
+                try {
+                  document.execCommand('copy');
+                  showCopied();
+                } catch (e) { /* ignore */ }
+              });
+            } else {
+              copySource.focus();
+              copySource.select();
+              try {
+                document.execCommand('copy');
+                showCopied();
+              } catch (e) { /* ignore */ }
+            }
+          });
+        }
+
         var toggle = document.getElementById('themeToggle');
         if (!toggle) return;
         toggle.addEventListener('click', function (e) {

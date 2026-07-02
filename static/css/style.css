@@ -1663,6 +1663,33 @@ select.form-control {
   background: rgba(205, 92, 92, 0.06);
 }
 
+.error-trace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.error-trace-header .error-trace-title {
+  margin-bottom: 0;
+}
+
+.error-copy-btn.copied {
+  border-color: #2e8b2e;
+  color: #2e8b2e;
+  background: rgba(46, 139, 46, 0.12);
+}
+
+.error-trace-copy-source {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .error-trace-title {
   font-size: 0.78rem;
   font-weight: 700;

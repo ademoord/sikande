@@ -25,6 +25,14 @@ if os.path.exists(config_file_path):
                 continue
             key, value = line.split('=', 1)
             app.config[key] = value
+
+    # PythonAnywhere MySQL closes idle connections (~300s). Recycle and ping
+    # the pool so random 500s ("Lost connection during query") stop happening.
+    app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+    }
 else:
     # Local development fallback: use a local SQLite database.
     base_dir = os.path.abspath(os.path.dirname(__file__))
