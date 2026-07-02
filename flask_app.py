@@ -23,6 +23,7 @@ from archive_query import (
 from archive_ingest import refresh_canonical_names, run_ingest
 from archive_normalize import normalize_name
 from dashboard_spending import chart_doughnut_data, chart_monthly_totals, get_spending_context, parse_range
+from error_pages import register_error_handlers
 import os
 import subprocess
 
@@ -43,6 +44,8 @@ with app.app_context():
 if app.config.get('LOCAL_DEV'):
     from seed import seed_if_local
     seed_if_local()
+
+register_error_handlers(app)
 
 
 @app.after_request
