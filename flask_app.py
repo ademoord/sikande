@@ -8,7 +8,7 @@ from datetime import datetime
 import helpers
 import exchange_rates
 import gold_prices
-from flask import render_template, request, redirect, url_for, flash, jsonify
+from flask import render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.exc import OperationalError
 from config import app, db, login_manager
@@ -47,6 +47,34 @@ if app.config.get('LOCAL_DEV'):
     seed_if_local()
 
 register_error_handlers(app)
+
+
+@app.route('/manifest.webmanifest')
+def pwa_manifest():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'manifest.webmanifest',
+        mimetype='application/manifest+json',
+    )
+
+
+@app.route('/sw.js')
+def pwa_service_worker():
+    response = send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'sw.js',
+        mimetype='application/javascript',
+    )
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
+@app.route('/offline')
+def pwa_offline():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'offline.html',
+    )
 
 
 @app.after_request

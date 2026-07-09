@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+      (function () {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+      })();
+    </script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>Offline - Sikande</title>
+  </head>
+  <body>
+    <div class="error-page">
+      <div class="error-card content-card">
+        <div class="error-badge">Offline</div>
+        <div class="error-icon-wrap"><i class="fas fa-wifi"></i></div>
+        <h1>No connection</h1>
+        <p class="error-headline">Sikande needs the internet for live data.</p>
+        <p class="error-hint">Check your connection, then reload. Cached pages may still open briefly.</p>
+        <div class="error-actions">
+          <button type="button" class="btn-gold" onclick="window.location.reload()">
+            <i class="fas fa-sync-alt"></i> Try again
+          </button>
+          <a href="/" class="btn-outline"><i class="fas fa-home"></i> Home</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

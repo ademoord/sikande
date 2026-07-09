@@ -13,7 +13,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" type="image/x-icon" href="/static/images/logo-S-big-transparent.ico">
+    <link rel="apple-touch-icon" href="/static/images/logo-S-big-transparent.png">
+    <meta name="theme-color" content="#c9a227">
     <title>{{ code }} {{ title }} - Sikande</title>
   </head>
   <body>
@@ -68,6 +71,7 @@ Request: {{ method }} {{ path }}{% if query %}?{{ query }}{% endif %}
       </div>
       <p class="error-footer-note">Sikande error tracer &middot; use Copy to paste details into a message</p>
     </div>
+    <script src="/static/js/pwa.js"></script>
     <script>
       (function () {
         var copyBtn = document.getElementById('copyErrorTrace');

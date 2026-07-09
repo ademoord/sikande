@@ -19,6 +19,16 @@ make run        # http://127.0.0.1:5000
 | admin    | admin    |
 | demo     | demo123  |
 
+### Progressive Web App (PWA)
+
+Sikande can be installed on mobile/desktop (requires **HTTPS** — production only):
+
+1. Open the site in Chrome/Safari on your phone
+2. **Settings → Install Sikande**, or use browser **Add to Home Screen**
+3. Launches full-screen from your home screen with offline shell caching
+
+After deploying PWA updates, bump `CACHE_VERSION` in `static/sw.js` so clients refresh cached assets.
+
 | Database | Path |
 |----------|------|
 | Live (Purchases/Input) | `data/local.sqlite3` |
