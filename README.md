@@ -21,13 +21,16 @@ make run        # http://127.0.0.1:5000
 
 ### Progressive Web App (PWA)
 
-Sikande can be installed on mobile/desktop (requires **HTTPS** — production only):
+Sikande ships with a web app manifest, install icons, and a root-scoped service worker that caches static assets only (CSS, JS, logos). HTML pages and authenticated routes always use the network.
 
-1. Open the site in Chrome/Safari on your phone
-2. **Settings → Install Sikande**, or use browser **Add to Home Screen**
-3. Launches full-screen from your home screen with offline shell caching
+After deploy, verify in Chrome DevTools → **Application** → **Manifest** and **Service Workers**. On mobile, use **Settings → Install Sikande** or **Add to Home Screen**.
 
-After deploying PWA updates, bump `CACHE_VERSION` in `static/sw.js` so clients refresh cached assets.
+| URL | Purpose |
+| --- | --- |
+| `/manifest.webmanifest` | Install metadata (Flask route, correct MIME type) |
+| `/sw.js` | Service worker (must be at site root for full scope) |
+
+If you change cached static files, bump `CACHE_VERSION` in `static/sw.js`.
 
 | Database | Path |
 |----------|------|

@@ -51,30 +51,17 @@ register_error_handlers(app)
 
 @app.route('/manifest.webmanifest')
 def pwa_manifest():
-    return send_from_directory(
-        os.path.join(app.root_path, 'static'),
-        'manifest.webmanifest',
-        mimetype='application/manifest+json',
-    )
+    response = send_from_directory(app.static_folder, 'manifest.webmanifest')
+    response.headers['Content-Type'] = 'application/manifest+json; charset=utf-8'
+    return response
 
 
 @app.route('/sw.js')
 def pwa_service_worker():
-    response = send_from_directory(
-        os.path.join(app.root_path, 'static'),
-        'sw.js',
-        mimetype='application/javascript',
-    )
+    response = send_from_directory(app.static_folder, 'sw.js')
+    response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
     response.headers['Cache-Control'] = 'no-cache'
     return response
-
-
-@app.route('/offline')
-def pwa_offline():
-    return send_from_directory(
-        os.path.join(app.root_path, 'static'),
-        'offline.html',
-    )
 
 
 @app.after_request

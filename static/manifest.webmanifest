@@ -2,7 +2,7 @@
   "name": "Sikande",
   "short_name": "Sikande",
   "description": "Sistem Informasi Keuangan Andro & Dewi",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -27,6 +27,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "categories": ["finance", "productivity"]
+  ]
 }

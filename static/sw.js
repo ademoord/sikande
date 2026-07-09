@@ -1,89 +1,61 @@
-/* Sikande service worker — shell caching + offline fallback */
-const CACHE_VERSION = 'v1';
-const PRECACHE = 'sikande-precache-' + CACHE_VERSION;
-const RUNTIME = 'sikande-runtime-' + CACHE_VERSION;
+const CACHE_VERSION = "sikande-pwa-v2";
 
 const PRECACHE_URLS = [
-  '/offline',
-  '/static/css/style.css',
-  '/static/js/pwa.js',
-  '/static/js/sikandeScript.js',
-  '/static/js/dashboard.js',
-  '/static/images/logo-S-big-transparent.png',
-  '/static/images/logo-S-big-transparent.ico',
-  '/static/images/kabah-sikande.jpg',
+  "/static/css/style.css",
+  "/static/js/pwa.js",
+  "/static/js/sikandeScript.js",
+  "/static/js/dashboard.js",
+  "/static/images/logo-S-big-transparent.png",
+  "/static/images/logo-S-big-transparent.ico",
+  "/static/images/kabah-sikande.jpg",
+  "/manifest.webmanifest",
 ];
 
-self.addEventListener('install', function (event) {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(PRECACHE).then(function (cache) {
-      return cache.addAll(PRECACHE_URLS);
-    })
+    caches.open(CACHE_VERSION).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', function (event) {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(
-        keys.filter(function (key) {
-          return key.indexOf('sikande-') === 0 && key !== PRECACHE && key !== RUNTIME;
-        }).map(function (key) {
-          return caches.delete(key);
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key)))
+    )
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', function (event) {
-  var request = event.request;
-  if (request.method !== 'GET') {
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") {
     return;
   }
 
-  var url = new URL(request.url);
+  const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) {
     return;
   }
 
-  if (url.pathname.indexOf('/api/') === 0) {
+  if (!url.pathname.startsWith("/static/") && url.pathname !== "/manifest.webmanifest") {
     return;
   }
 
-  if (url.pathname.indexOf('/static/') === 0) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  if (request.mode === 'navigate' || (request.headers.get('accept') || '').indexOf('text/html') !== -1) {
-    event.respondWith(networkFirst(request));
-  }
-});
-
-function cacheFirst(request) {
-  return caches.match(request).then(function (cached) {
-    if (cached) {
-      return cached;
-    }
-    return fetch(request).then(function (response) {
-      if (response && response.status === 200) {
-        var copy = response.clone();
-        caches.open(RUNTIME).then(function (cache) {
-          cache.put(request, copy);
-        });
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) {
+        return cached;
       }
-      return response;
-    });
-  });
-}
 
-function networkFirst(request) {
-  return fetch(request).catch(function () {
-    return caches.match(request).then(function (cached) {
-      return cached || caches.match('/offline');
-    });
-  });
-}
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200 || response.type === "opaque") {
+          return response;
+        }
+
+        const copy = response.clone();
+        caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+        return response;
+      });
+    })
+  );
+});

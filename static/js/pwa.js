@@ -1,8 +1,8 @@
 (function () {
   var deferredPrompt = null;
-  var installBtn = document.getElementById('pwaInstallBtn');
-  var installCard = document.getElementById('pwaInstallCard');
-  var installStatus = document.getElementById('pwaInstallStatus');
+  var installBtn = document.getElementById("pwaInstallBtn");
+  var installCard = document.getElementById("pwaInstallCard");
+  var installStatus = document.getElementById("pwaInstallStatus");
 
   function setInstallVisible(show) {
     if (installCard) {
@@ -19,41 +19,43 @@
     }
   }
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function () {
-        /* registration failed — app still works without PWA */
-      });
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .catch(function () {
+          /* Non-fatal: app still works without offline caching. */
+        });
     });
   }
 
-  window.addEventListener('beforeinstallprompt', function (e) {
+  window.addEventListener("beforeinstallprompt", function (e) {
     e.preventDefault();
     deferredPrompt = e;
     setInstallVisible(true);
-    setStatus('Install Sikande on this device for quick access from your home screen.');
+    setStatus("Install Sikande on this device for quick access from your home screen.");
   });
 
-  window.addEventListener('appinstalled', function () {
+  window.addEventListener("appinstalled", function () {
     deferredPrompt = null;
     setInstallVisible(false);
-    setStatus('Sikande is installed on this device.');
+    setStatus("Sikande is installed on this device.");
   });
 
-  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
     setInstallVisible(false);
-    setStatus('Running as an installed app.');
+    setStatus("Running as an installed app.");
   }
 
   window.installSikandePwa = function () {
     if (!deferredPrompt) {
-      setStatus('Use your browser menu: Add to Home Screen / Install app.');
+      setStatus("Use your browser menu: Add to Home Screen / Install app.");
       return;
     }
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(function (choice) {
-      if (choice.outcome === 'accepted') {
-        setStatus('Installing…');
+      if (choice.outcome === "accepted") {
+        setStatus("Installing…");
       }
       deferredPrompt = null;
       setInstallVisible(false);
@@ -61,6 +63,6 @@
   };
 
   if (installBtn) {
-    installBtn.addEventListener('click', window.installSikandePwa);
+    installBtn.addEventListener("click", window.installSikandePwa);
   }
 })();
