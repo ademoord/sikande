@@ -23,7 +23,7 @@ make run        # http://127.0.0.1:5000
 
 Sikande ships with a web app manifest, install icons, and a root-scoped service worker that caches static assets only (CSS, JS, logos). HTML pages and authenticated routes always use the network.
 
-After deploy, verify in Chrome DevTools → **Application** → **Manifest** and **Service Workers**. On mobile, use **Settings → Install Sikande** or **Add to Home Screen**.
+After deploy, verify in Chrome DevTools → **Application** → **Manifest** and **Service Workers**. On mobile, use **Settings → Install Sikande**, **`/install`**, or **Add to Home Screen**.
 
 | URL | Purpose |
 | --- | --- |

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="content-card" style="max-width: 720px;">
+  <div class="content-card-header">
+    <h2>Install Sikande</h2>
+  </div>
+  {% include 'partials/pwa_install.html' %}
+  <p style="margin-top: 20px; margin-bottom: 0;">
+    <a href="{{ url_for('dashboard') }}" class="btn-outline"><i class="fas fa-home"></i> Go to Dashboard</a>
+  </p>
+</div>
+{% endblock %}
+
+{% block content_public %}
+<div class="login-page">
+  <div class="login-card" style="max-width: 480px;">
+    <img src="/static/images/logo-S-big-transparent.png" alt="Sikande">
+    <h1>Install Sikande</h1>
+    <p class="login-sub">Add Sikande to your home screen for quick, full-screen access.</p>
+
+    {% include 'partials/pwa_install.html' %}
+
+    <p style="margin-top: 24px; margin-bottom: 0;">
+      <a href="{{ url_for('login') }}" class="btn-outline btn-block"><i class="fas fa-sign-in-alt"></i> Log in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

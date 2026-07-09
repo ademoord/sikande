@@ -13,10 +13,20 @@
     }
   }
 
-  function setStatus(text) {
-    if (installStatus) {
-      installStatus.textContent = text;
+  function setStatus(text, installed) {
+    if (!installStatus) {
+      return;
     }
+    if (installed) {
+      installStatus.innerHTML = '<i class="fas fa-check-circle"></i> ' + text;
+      return;
+    }
+    installStatus.textContent = text;
+  }
+
+  function markInstalled() {
+    setInstallVisible(false);
+    setStatus("Installed", true);
   }
 
   if ("serviceWorker" in navigator) {
@@ -38,13 +48,11 @@
 
   window.addEventListener("appinstalled", function () {
     deferredPrompt = null;
-    setInstallVisible(false);
-    setStatus("Sikande is installed on this device.");
+    markInstalled();
   });
 
   if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
-    setInstallVisible(false);
-    setStatus("Running as an installed app.");
+    markInstalled();
   }
 
   window.installSikandePwa = function () {

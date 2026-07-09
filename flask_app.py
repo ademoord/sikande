@@ -683,6 +683,11 @@ def delete_investment(invID):
     return redirect(url_for('invest'))
 
 # Settings view
+@app.route('/install')
+def install():
+    return render_template('install.html', title='Install')
+
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
