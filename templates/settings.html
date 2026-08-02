@@ -85,6 +85,77 @@
 
 <div class="content-card" style="max-width: 720px;">
   <div class="content-card-header">
+    <h2>SQL Console</h2>
+  </div>
+  <p style="color: var(--muted); margin-top: -6px;">
+    Run a direct SQL statement against the live database (MySQL in production, SQLite locally).
+    Use with care — writes are committed immediately.
+  </p>
+  <form method="POST" action="{{ url_for('settings_sql') }}" style="margin-top: 18px;"
+        onsubmit="return confirm('Execute this SQL against the live database?');">
+    <div class="form-group">
+      <label for="sqlQuery">SQL</label>
+      <textarea class="form-control" id="sqlQuery" name="sql" rows="8"
+                placeholder="SELECT * FROM item LIMIT 20;"
+                style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92rem;"
+                required>{{ sql_query or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn-gold">
+      <i class="fas fa-play"></i> Execute
+    </button>
+  </form>
+
+  {% if sql_result %}
+  <div style="margin-top: 20px;">
+    {% if sql_result.error %}
+    <div class="flash error" style="margin: 0;">
+      <i class="fas fa-exclamation-triangle"></i> {{ sql_result.error }}
+    </div>
+    {% elif sql_result.kind == 'write' %}
+    <div class="flash success" style="margin: 0;">
+      <i class="fas fa-check-circle"></i>
+      Statement committed.
+      {% if sql_result.rowcount is not none and sql_result.rowcount >= 0 %}
+      Rows affected: {{ sql_result.rowcount }}.
+      {% endif %}
+    </div>
+    {% elif sql_result.kind == 'select' %}
+    <p class="form-hint" style="margin-bottom: 10px;">
+      <i class="fas fa-table"></i>
+      {{ sql_result.rowcount }} row(s)
+      {% if sql_result.truncated %}(showing first 500){% endif %}
+    </p>
+    {% if sql_result.rows %}
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered" style="font-size: 0.85rem; margin-bottom: 0;">
+        <thead>
+          <tr>
+            {% for col in sql_result.columns %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in sql_result.rows %}
+          <tr>
+            {% for cell in row %}
+            <td>{{ cell }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="form-hint"><i class="fas fa-info-circle"></i> Query returned no rows.</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="content-card" style="max-width: 720px;">
+  <div class="content-card-header">
     <h2>Database Maintenance</h2>
   </div>
   <p style="color: var(--muted); margin-top: -6px;">Backup or maintain your database.</p>

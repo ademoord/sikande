@@ -688,24 +688,27 @@ def install():
     return render_template('install.html', title='Install')
 
 
+def _settings_context(**extra):
+    antam_rows = Investment.query.filter_by(invType='gold', asset='Antam').all()
+    ctx = {
+        'title': 'Settings',
+        'antam_count': len(antam_rows),
+        'antam_price': antam_rows[0].currentPrice if antam_rows else None,
+        'last_ingest': IngestRun.query.order_by(IngestRun.started_at.desc()).first(),
+        'dump_count': len(list_sql_dumps(app.config)),
+        'archive_stat': archive_stats(),
+        'dumps_dir': sql_dumps_dir(app.config),
+        'sql_query': '',
+        'sql_result': None,
+    }
+    ctx.update(extra)
+    return ctx
+
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    title = "Settings"
-    antam_rows = Investment.query.filter_by(invType='gold', asset='Antam').all()
-    antam_count = len(antam_rows)
-    antam_price = antam_rows[0].currentPrice if antam_rows else None
-    last_ingest = IngestRun.query.order_by(IngestRun.started_at.desc()).first()
-    dump_count = len(list_sql_dumps(app.config))
-    archive_stat = archive_stats()
-    return render_template('settings.html',
-                            title=title,
-                            antam_count=antam_count,
-                            antam_price=antam_price,
-                            last_ingest=last_ingest,
-                            dump_count=dump_count,
-                            archive_stat=archive_stat,
-                            dumps_dir=sql_dumps_dir(app.config))
+    return render_template('settings.html', **_settings_context())
 
 
 @app.route('/settings/antam_price', methods=['POST'])
@@ -722,6 +725,71 @@ def settings_antam_price():
         db.session.rollback()
         flash('Failed to update Antam price.', 'error')
     return redirect(url_for('settings'))
+
+
+SQL_RESULT_ROW_LIMIT = 500
+
+
+@app.route('/settings/sql', methods=['POST'])
+@login_required
+def settings_sql():
+    """Run a raw SQL statement against the live DB with a simple cursor/commit."""
+    sql = (request.form.get('sql') or '').strip()
+    result = {
+        'ok': False,
+        'error': None,
+        'columns': None,
+        'rows': None,
+        'rowcount': None,
+        'truncated': False,
+        'kind': None,
+    }
+
+    if not sql:
+        result['error'] = 'SQL query is empty.'
+        return render_template('settings.html', **_settings_context(sql_query=sql, sql_result=result))
+
+    conn = db.engine.raw_connection()
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        if cursor.description:
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchmany(SQL_RESULT_ROW_LIMIT + 1)
+            truncated = len(rows) > SQL_RESULT_ROW_LIMIT
+            if truncated:
+                rows = rows[:SQL_RESULT_ROW_LIMIT]
+            result.update({
+                'ok': True,
+                'kind': 'select',
+                'columns': columns,
+                'rows': rows,
+                'rowcount': len(rows),
+                'truncated': truncated,
+            })
+        else:
+            conn.commit()
+            result.update({
+                'ok': True,
+                'kind': 'write',
+                'rowcount': cursor.rowcount,
+            })
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        result['error'] = str(e)
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        conn.close()
+
+    return render_template('settings.html', **_settings_context(sql_query=sql, sql_result=result))
 
 
 def _parse_archive_filters():
